@@ -1,0 +1,86 @@
+# Navigation
+[nav_about]
+other = "אודות"
+
+[nav_experience]
+other = "ניסיון"
+
+[nav_education]
+other = "השכלה"
+
+[nav_projects]
+other = "פרויקטים"
+
+[nav_achievements]
+other = "הישגים"
+
+[nav_contact]
+other = "צור קשר"
+
+[search_placeholder]
+other = "חיפוש..."
+
+# Sections
+[about]
+other = "אודותי"
+
+[experience]
+other = "ניסיון"
+
+[education]
+other = "השכלה"
+
+[projects]
+other = "פרויקטים"
+
+[achievements]
+other = "הישגים"
+
+[contact]
+other = "צור קשר"
+
+# Contact form
+[contact_email_placeholder]
+other = "הכנס את המייל שלך"
+
+[contact_message_placeholder]
+other = "הכנס את ההודעה"
+
+# Footer
+[recent_posts]
+other = "פוסטים אחרונים"
+
+# Common terms
+[read]
+other = "קרא"
+
+[toc]
+other = "תוכן עניינים"
+
+[tags]
+other = "תגיות"
+
+[social]
+other = "רשתות"
+
+[copyright]
+other = "כל הזכויות שמורות"
+
+[email_text]
+other = "בדקו את האתר"
+
+[page_not_found]
+other = "הדף לא נמצא"
+
+# Date formats
+[min_read]
+other = "דקות קריאה"
+
+[open_pdf]
+other = "פתח PDF בטאב חדש"
+
+[teaching_choose]
+other = "בחר קישור מהרשימה כדי להציג את הקובץ"
+
+[teaching_no_courses]
+other = "טרם הוגדרו קורסים. הוסף הרצאות ותרגולים ב-front matter של העמוד."

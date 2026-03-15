@@ -1,0 +1,14 @@
+{{- $src := .Get "src" | default (.Get 0) -}}
+{{- $height := .Get "height" | default "80vh" -}}
+{{- if $src -}}
+<div class="pdf-embed" style="width: 100%; max-width: 100%; overflow: hidden;">
+  <iframe
+    src="{{ $src }}"
+    style="width: 100%; height: {{ $height }}; border: none; display: block;"
+    title="PDF document"
+    loading="lazy"
+  ></iframe>
+</div>
+{{- else -}}
+{{- errorf "shortcode pdf: missing 'src' or positional PDF path" -}}
+{{- end -}}

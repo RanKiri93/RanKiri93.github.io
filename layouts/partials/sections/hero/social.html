@@ -1,0 +1,28 @@
+{{ with .Site.Params.hero.socialLinks }}
+  {{ $fa := .fontAwesomeIcons | default slice }}
+  {{ $custom := .customIcons | default slice }}
+  {{ if or (gt (len $fa) 0) (gt (len $custom) 0) }}
+<span>
+    {{ range $fa }}
+    <span class="px-1">
+        <a href="{{ .url }}"
+            {{ if not (hasPrefix .url "#") }} target="_blank" {{ end }}
+            class="btn social-icon"
+        >
+            <i class="{{ .icon }}"></i>
+        </a>
+    </span>
+    {{ end }}
+    {{ range $custom }}
+    <span class="px-1">
+        <a href="{{ .url }}"
+            {{ if not (hasPrefix .url "#") }} target="_blank" {{ end }}
+            class="btn social-icon"
+        >
+            <img src="{{ .icon }}" alt="">
+        </a>
+    </span>
+    {{ end }}
+</span>
+  {{ end }}
+{{ end }}

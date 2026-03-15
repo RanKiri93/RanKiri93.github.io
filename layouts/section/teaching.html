@@ -1,0 +1,104 @@
+{{ define "head" }}
+<meta name="description" content="{{ .Title }} | {{ .Site.Title }}">
+<link rel="stylesheet" href="{{ (printf "%scss/list.css" (.Site.Params.staticPath | default "")) | relURL }}" media="all">
+{{ end }}
+
+{{ define "title" }}
+{{ .Title }} | {{ .Site.Title }}
+{{ end }}
+
+{{ define "main" }}
+<div class="container-fluid pt-4 px-3" id="teaching-page">
+  <h2 class="teaching-page-title text-center pb-3">{{ .Title }}</h2>
+
+  {{ if .Content }}
+  <div class="section-content mb-3 text-center">
+    {{ .Content }}
+  </div>
+  {{ end }}
+
+  {{ $lectures := .Params.lectures | default slice }}
+  {{ $recitations := .Params.recitations | default slice }}
+  {{ $hasAny := or (gt (len $lectures) 0) (gt (len $recitations) 0) }}
+
+  {{ $firstUrl := "" }}
+{{ with index $recitations 0 }}{{ $firstUrl = .url }}{{ end }}
+{{ if not $firstUrl }}{{ with index $lectures 0 }}{{ $firstUrl = .url }}{{ end }}{{ end }}
+
+{{ if $hasAny }}
+  <div class="row g-3 teaching-layout" data-first-pdf="{{ $firstUrl }}">
+    {{- /* RTL: first column = right side (list), second = left side (PDF) */ -}}
+    <div class="col-12 col-lg-4 col-xl-3 order-1 order-lg-1">
+      <div class="teaching-sidebar sticky-top">
+        <div class="list-group teaching-list">
+          {{ if gt (len $lectures) 0 }}
+          <div class="list-group-item list-group-item-secondary py-2">
+            <strong>הרצאות</strong>
+          </div>
+          {{ range $lectures }}
+          <a href="{{ .url }}" class="list-group-item list-group-item-action teaching-link" data-pdf-url="{{ .url }}" target="_blank" rel="noopener">
+            {{ .name }}
+          </a>
+          {{ end }}
+          {{ end }}
+
+          {{ if gt (len $recitations) 0 }}
+          <div class="list-group-item list-group-item-secondary py-2 mt-2">
+            <strong>תרגולים</strong>
+          </div>
+          {{ range $recitations }}
+          <a href="{{ .url }}" class="list-group-item list-group-item-action teaching-link" data-pdf-url="{{ .url }}" target="_blank" rel="noopener">
+            {{ .name }}
+          </a>
+          {{ end }}
+          {{ end }}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-lg-7 col-xl-8 order-2 order-lg-2">
+      <div class="teaching-pdf-wrapper rounded border shadow-sm bg-light p-2">
+        {{- /* יחס גובה–רוחב של עמוד A4: 210×297 מ"מ */ -}}
+        {{- /* רוחב 218mm, גובה (307) */ -}}
+        <div class="teaching-pdf-a4-box" style="max-width: 218mm; width: 100%; margin: 0 auto; aspect-ratio: 218/307; min-height: 413px; position: relative; background: #f8f9fa;">
+          <iframe id="teaching-pdf-viewer" title="PDF" style="position: absolute; inset: 0; width: 100%; height: 100%; border: none;" src=""></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+  {{ else }}
+  <p class="text-muted text-center">{{ i18n "teaching_no_courses" | default "טרם הוגדרו קורסים. הוסף הרצאות ותרגולים ב-front matter של העמוד." }}</p>
+  {{ end }}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var viewer = document.getElementById('teaching-pdf-viewer');
+  var links = document.querySelectorAll('.teaching-link');
+  if (!viewer) return;
+
+  function showPdf(url) {
+    if (!url) return;
+    viewer.src = url;
+    for (var i = 0; i < links.length; i++) {
+      links[i].classList.toggle('active', links[i].getAttribute('data-pdf-url') === url);
+    }
+  }
+
+  for (var j = 0; j < links.length; j++) {
+    (function(link) {
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+        var url = link.getAttribute('data-pdf-url');
+        if (url) showPdf(url);
+        return false;
+      });
+    })(links[j]);
+  }
+
+  var layout = document.querySelector('.teaching-layout');
+  var firstUrl = layout ? (layout.getAttribute('data-first-pdf') || '').trim() : '';
+  if (firstUrl) showPdf(firstUrl);
+});
+</script>
+{{ end }}

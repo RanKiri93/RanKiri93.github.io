@@ -1,0 +1,182 @@
+baseURL = 'https://example.org/'
+languageCode = 'he'
+defaultContentLanguage = 'he'
+title = 'פרופיל אקדמי'
+
+theme = 'hugo-profile'
+
+[languages.he]
+  weight = 1
+  languageName = 'עברית'
+  contentDir = 'content'
+
+  [languages.he.params]
+    [languages.he.params.hero]
+      enable = true
+      intro = 'שלום, אני'
+      title = 'רן קירי'
+      subtitle = 'דוקטורנט ומרצה בטכניון'
+      content = 'סטודנט לתואר דוקטור במתמטיקה בטכניון. מתעניין במבנה הגיאומטרי של מערכות אופרטורים ובהוראה.'
+      image = '/profile.png'
+    [languages.he.params.hero.button]
+      enable = true
+      name = 'קורות חיים'
+      url = '/CV.pdf'
+      download = true
+    [languages.he.params.hero.bottomImage]
+      enable = false
+    [languages.he.params.about]
+      enable = true
+      title = 'אודות'
+      content = '''אני סטודנט לתואר דוקטור במתמטיקה בטכניון תחת הנחיית הפרופסור אור משה שליט. אני מתעניין במבנה הגיאומטרי של מערכות אופרטורים (Operator Systems), והקשר בינו לבין תכונות של מערכות אלה והאלגבראות שהן יוצרות. לאחרונה עיסוקיי כוללים גם חקירה של אופרטורים העולים כחלק מהשערת ה-Essential Normality של William Arveson, וחקירת גרסאות אפשריות נוספות של אי-שוויונים בסגנון Von-Neumann.
+
+לצד עיסוקיי במחקר, אני עוסק רבות בהוראה הן כמתרגל והן כמרצה בקורסי מתמטיקה בטכניון, ומתעניין בקידום הוראת המתמטיקה בטכניון ובכלל—בפן הטכנולוגי ובפן הפדגוגי.'''
+
+[menu]
+  [[menu.main]]
+    identifier = 'research'
+    name = 'מחקר'
+    title = 'מחקר'
+    url = '/research/'
+    weight = 10
+  [[menu.main]]
+    identifier = 'teaching'
+    name = 'הוראה'
+    title = 'הוראה'
+    url = '/teaching/'
+    weight = 20
+  [[menu.main]]
+    identifier = 'publications'
+    name = 'פרסומים'
+    title = 'פרסומים'
+    url = '/publications/'
+    weight = 30
+
+[params]
+  customCSS = true
+  description = 'פרופיל אקדמי ומחקר'
+  animate = true
+
+  [params.hero]
+    enable = true
+    intro = 'שלום, אני'
+    title = 'רן קירי'
+    subtitle = 'דוקטורנט ומרצה בטכניון'
+    content = 'סטודנט לתואר דוקטור במתמטיקה בטכניון. מתעניין במבנה הגיאומטרי של מערכות אופרטורים ובהוראה.'
+    image = '/profile.png'
+    button = { enable = true, name = 'קורות חיים', url = '/CV.pdf', download = true }
+    [params.hero.bottomImage]
+      enable = false
+    [params.hero.socialLinks]
+      fontAwesomeIcons = []
+      customIcons = []
+
+  [params.about]
+    enable = true
+    title = 'אודות'
+    content = '''אני סטודנט לתואר דוקטור במתמטיקה בטכניון תחת הנחיית הפרופסור אור משה שליט. אני מתעניין במבנה הגיאומטרי של מערכות אופרטורים (Operator Systems), והקשר בינו לבין תכונות של מערכות אלה והאלגבראות שהן יוצרות. לאחרונה עיסוקיי כוללים גם חקירה של אופרטורים העולים כחלק מהשערת ה-Essential Normality של William Arveson, וחקירת גרסאות אפשריות נוספות של אי-שוויונים בסגנון Von-Neumann.
+
+לצד עיסוקיי במחקר, אני עוסק רבות בהוראה הן כמתרגל והן כמרצה בקורסי מתמטיקה בטכניון, ומתעניין בקידום הוראת המתמטיקה בטכניון ובכלל—בפן הטכנולוגי ובפן הפדגוגי.'''
+
+  [params.experience]
+    enable = true
+    title = 'ניסיון'
+
+  [[params.experience.items]]
+    company = 'הפקולטה למתמטיקה, טכניון'
+    companyUrl = 'https://math.technion.ac.il'
+    jobs = [
+      { name = 'מרצה ומרצה אחראי של קורסים', date = '2023 – היום', content = 'הוראה בקורסי מתמטיקה בפקולטה למתמטיקה בטכניון, כולל תפקיד מרצה אחראי של קורסים.' },
+      { name = 'מתרגל ומתרגל אחראי של קורס', date = '2019 – היום', content = 'תרגול והנחיה בקורסי מתמטיקה בפקולטה למתמטיקה בטכניון, כולל תפקיד מתרגל אחראי של קורס.' },
+      { name = 'בודק תרגילי בית', date = '2018 – 2019', content = 'בדיקת תרגילי בית בקורסי מתמטיקה בפקולטה למתמטיקה בטכניון.' }
+    ]
+
+  [[params.experience.items]]
+    company = 'צבא הגנה לישראל'
+    companyUrl = 'https://www.idf.il'
+    jobs = [
+      { name = 'מפקד טנק (מילואים)', date = '2025 – היום', content = 'מפקד טנק בשירות מילואים.' },
+      { name = 'איש צוות בטנק (מילואים)', date = '2023 – 2024', content = 'איש צוות בטנק בשירות מילואים.' },
+      { name = 'סמל / מפקד מקצועי של מחלקת מרגמות', date = '2014 – 2015', content = 'מפקד מקצועי של מחלקת מרגמות בשירות חובה.' },
+      { name = 'מפקד טנק', date = '2013 – 2014', content = 'מפקד טנק בשירות חובה.' }
+    ]
+
+  [[params.experience.items]]
+    company = 'אגודת הסטודנטים של הטכניון'
+    companyUrl = 'https://www.technion.ac.il'
+    jobs = [
+      { name = 'מדריך פק"לים במתמטיקה', date = '2018 – 2019', content = 'הדרכת קורסי הכנה במתמטיקה (פק"לים) מטעם אגודת הסטודנטים.' }
+    ]
+
+  [params.education]
+    enable = true
+    title = 'השכלה'
+
+  [[params.education.items]]
+    title = 'דוקטורט במתמטיקה (בהתקדמות)'
+    school = { name = 'טכניון – מכון טכנולוגי לישראל', url = 'https://www.technion.ac.il' }
+    date = 'היום'
+    content = "מנחה: פרופ' אור שליט."
+
+  [[params.education.items]]
+    title = 'תואר שני במתמטיקה'
+    school = { name = 'טכניון – מכון טכנולוגי לישראל', url = 'https://www.technion.ac.il' }
+    date = '2020 – 2022'
+    GPA = '94.3'
+    content = "עבודת גמר: \"Finitely Generated Matrix Convex Sets and Classification of Operator Systems Generated by Λ-Commuting Unitaries\" (ציון 95). מנחה: פרופ' אור שליט."
+
+  [[params.education.items]]
+    title = 'תואר ראשון במתמטיקה ופיזיקה'
+    school = { name = 'טכניון – מכון טכנולוגי לישראל', url = 'https://www.technion.ac.il' }
+    date = '2016 – 2020'
+    GPA = '83.9'
+    content = ''
+
+  [params.projects]
+    enable = true
+    title = 'פרויקטי מחקר'
+
+  [[params.projects.items]]
+    title = 'מערכות אופרטורים תת-הומוגניות וסיווג מערכות מ-Λ-commuting unitaries'
+    content = 'מחקר על קבוצות מטריצה קמורות שנוצרות סופית וסיווג מערכות אופרטורים שנוצרות על ידי unitaries מתחלפים לפי Λ. פרסום: Integral Equations and Operator Theory, כרך 96, מאמר 15 (2023). הוצג גם כפוסטר ביום המחקר בטכניון (2023).'
+    image = '/profile.png'
+    badges = ['Operator Theory', 'Operator Systems', 'IEOT']
+    featured = { name = 'למאמר', link = 'https://link.springer.com/article/10.1007/s00020-024-02765-8' }
+
+  [[params.projects.items]]
+    title = 'השערת Essential Normality ואי-שוויוני Von-Neumann'
+    content = 'חקירת אופרטורים העולים בהקשר של השערת ה-Essential Normality של William Arveson, וגרסאות אפשריות של אי-שוויונים בסגנון Von-Neumann — כיווני מחקר נוכחיים בדוקטורט.'
+    image = '/profile.png'
+    badges = ['Operator Theory', 'Essential Normality', 'C*-algebras']
+
+  [params.achievements]
+    enable = true
+    title = 'הישגים ומענקים'
+
+  [[params.achievements.items]]
+    title = 'פרס Sandor Szego למצוינות בהוראה'
+    content = 'הוענק תשע פעמים, 2019–2024.'
+
+  [[params.achievements.items]]
+    title = 'פרס מרצה מצטיין'
+    content = 'אביב תשפ"ה, חורף תשפ"ה, ואביב תשפ"ד.'
+    url = 'https://promoteach.technion.ac.il/lecturer-excellence-2-3/'
+
+  [[params.achievements.items]]
+    title = 'פרס הקרן לעידוד המצוינות במתמטיקה'
+    content = 'עבור עבודת מגיסטר מצטיינת, תשפ"ג.'
+
+  [[params.achievements.items]]
+    title = 'מלגת מרים ואהרון גוטווירט'
+    content = 'במהלך לימודי הדוקטורט.'
+
+  [params.contact]
+    enable = true
+    title = 'צור קשר'
+    content = 'מזמין שיתופי פעולה, שאלות על המחקר או ההוראה, והצעות להרצאות. נא לשלוח אימייל לכתובת הטכניונית באמצעות הכפתור למטה.'
+    btnName = 'שלח אימייל'
+    email = 'rankiri@campus.technion.ac.il'
+
+  [params.navbar]
+    brandName = 'פרופיל אקדמי'
+    enableSeparator = true
