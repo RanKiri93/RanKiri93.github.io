@@ -14,6 +14,8 @@ lectures:
 recitations:
   - name: "104031 - חשבון אינפיניטסימלי 1מ'"
     url: "/Recitations/104031.pdf"
+  - name: "104295 - חשבון אינפיניטסימלי 3"
+    url: "/Recitations/104295.pdf"
   - name: "104168 - אלגברה ב'"
     url: "/Recitations/104168.pdf"
   - name: "104285 - משוואות דיפרנציאליות רגילות א'"
