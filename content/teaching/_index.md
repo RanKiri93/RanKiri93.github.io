@@ -14,6 +14,8 @@ lectures:
 recitations:
   - name: "104031 - חשבון אינפיניטסימלי 1מ'"
     url: "/Recitations/104031.pdf"
+  - name: "104281 - חשבון אינפיניטסימלי 2"
+    url: "/Recitations/104281"
   - name: "104295 - חשבון אינפיניטסימלי 3"
     url: "/Recitations/104295.pdf"
   - name: "104168 - אלגברה ב'"
