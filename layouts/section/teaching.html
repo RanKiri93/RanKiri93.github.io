@@ -21,9 +21,9 @@
   {{ $recitations := .Params.recitations | default slice }}
   {{ $hasAny := or (gt (len $lectures) 0) (gt (len $recitations) 0) }}
 
-  {{ $firstUrl := "" }}
-{{ with index $recitations 0 }}{{ $firstUrl = .url }}{{ end }}
-{{ if not $firstUrl }}{{ with index $lectures 0 }}{{ $firstUrl = .url }}{{ end }}{{ end }}
+  {{- $firstUrl := "" -}}
+  {{- with index $recitations 0 }}{{ $firstUrl = (.url | relURL) }}{{ end -}}
+  {{- if not $firstUrl }}{{ with index $lectures 0 }}{{ $firstUrl = (.url | relURL) }}{{ end }}{{ end -}}
 
 {{ if $hasAny }}
   <div class="row g-3 teaching-layout" data-first-pdf="{{ $firstUrl }}">
@@ -36,7 +36,7 @@
             <strong>הרצאות</strong>
           </div>
           {{ range $lectures }}
-          <a href="{{ .url }}" class="list-group-item list-group-item-action teaching-link" data-pdf-url="{{ .url }}" target="_blank" rel="noopener">
+          <a href="{{ .url | relURL }}" class="list-group-item list-group-item-action teaching-link" data-pdf-url="{{ .url | relURL }}" target="_blank" rel="noopener">
             {{ .name }}
           </a>
           {{ end }}
@@ -47,7 +47,7 @@
             <strong>תרגולים</strong>
           </div>
           {{ range $recitations }}
-          <a href="{{ .url }}" class="list-group-item list-group-item-action teaching-link" data-pdf-url="{{ .url }}" target="_blank" rel="noopener">
+          <a href="{{ .url | relURL }}" class="list-group-item list-group-item-action teaching-link" data-pdf-url="{{ .url | relURL }}" target="_blank" rel="noopener">
             {{ .name }}
           </a>
           {{ end }}
