@@ -1,0 +1,75 @@
+---
+import { getCollection } from 'astro:content';
+import { formatPartialDate } from '../i18n/format';
+import { getLangFromUrl, useTranslations, type UIKey } from '../i18n/ui';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const papers = (await getCollection('publications')).sort((a, b) => b.data.year - a.data.year);
+const talks = (await getCollection('talks')).sort((a, b) => b.data.date.localeCompare(a.data.date));
+
+const talkSections: { kind: 'conference' | 'invited' | 'poster'; heading: UIKey }[] = [
+  { kind: 'conference', heading: 'research.conferences' },
+  { kind: 'invited', heading: 'research.invited' },
+  { kind: 'poster', heading: 'research.posters' },
+];
+---
+
+<div class="container page">
+  <h1>{t('research.title')}</h1>
+  <p class="lede">{t('research.intro')}</p>
+
+  <section>
+    <h2>{t('research.publications')}</h2>
+    <ul class="entries">
+      {
+        papers.map(({ data }) => (
+          <li>
+            <a href={data.url}>
+              <bdi lang="en">{data.title}</bdi>
+            </a>
+            <span class="meta">
+              <bdi lang="en">
+                {data.authors.join(', ')}. <i>{data.journal}</i>
+                {data.volume && ` ${data.volume}`}
+                {data.article && `, article ${data.article}`} ({data.year})
+              </bdi>
+            </span>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  {
+    talkSections.map(({ kind, heading }) => (
+      <section>
+        <h2>{t(heading)}</h2>
+        <ul class="entries">
+          {talks
+            .filter(({ data }) => data.kind === kind)
+            .map(({ data }) => (
+              <li>
+                {data.file ? (
+                  <a href={data.file}>
+                    <bdi lang="en">{data.title}</bdi>
+                  </a>
+                ) : (
+                  <span class="title">
+                    <bdi lang="en">{data.title}</bdi>
+                  </span>
+                )}
+                <span class="meta">
+                  {data.event &&
+                    (data.eventUrl ? <a href={data.eventUrl}>{data.event[lang]}</a> : data.event[lang])}
+                  {data.event && ', '}
+                  {data.place[lang]}, {formatPartialDate(data.date, lang)}
+                </span>
+              </li>
+            ))}
+        </ul>
+      </section>
+    ))
+  }
+</div>

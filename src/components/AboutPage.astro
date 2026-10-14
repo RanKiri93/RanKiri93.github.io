@@ -1,0 +1,56 @@
+---
+import { getEntry, render } from 'astro:content';
+import { awards, cvUrl, education, email } from '../data/profile';
+import { getLangFromUrl, useTranslations } from '../i18n/ui';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const page = await getEntry('pages', `${lang}/about`);
+if (!page) throw new Error(`Missing src/content/pages/${lang}/about.md`);
+const { Content } = await render(page);
+---
+
+<div class="container page">
+  <h1>{page.data.title}</h1>
+  <div class="prose">
+    <Content />
+  </div>
+  <p><a href={cvUrl}>{t('about.cv')}</a></p>
+
+  <section>
+    <h2>{t('about.education')}</h2>
+    <ul class="entries">
+      {
+        education.map(({ degree, years, detail }) => (
+          <li>
+            <span class="title">{degree[lang]}</span>
+            <span class="meta">
+              {years && `${years}. `}
+              {detail?.[lang]}
+            </span>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <section>
+    <h2>{t('about.awards')}</h2>
+    <ul class="entries">
+      {
+        awards.map(({ title, detail, url }) => (
+          <li>
+            {url ? <a href={url}>{title[lang]}</a> : <span class="title">{title[lang]}</span>}
+            <span class="meta">{detail[lang]}</span>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <section>
+    <h2>{t('about.contact')}</h2>
+    <p>{t('about.contactText')} <a href={`mailto:${email}`}>{email}</a></p>
+  </section>
+</div>

@@ -1,0 +1,98 @@
+---
+import { localePath, useTranslations, type Lang } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+  altLang: Lang;
+  altLabel: string;
+  /** Same page in the other language; falls back to that language's home. */
+  altHref?: string;
+}
+
+const { lang, altLang, altLabel, altHref } = Astro.props;
+const t = useTranslations(lang);
+
+// Courses are written in Hebrew only, so every language links to them.
+const links: { href: string; label: string; hreflang?: Lang }[] = [
+  { href: localePath('he', 'courses/'), label: t('nav.courses'), hreflang: lang === 'he' ? undefined : 'he' },
+  { href: localePath(lang, 'research/'), label: t('nav.research') },
+  { href: localePath(lang, 'about/'), label: t('nav.about') },
+];
+
+const current = Astro.url.pathname;
+---
+
+<header class="site-header">
+  <div class="container bar">
+    <a class="brand" href={localePath(lang)}>{t('site.name')}</a>
+    <nav aria-label={t('nav.label')}>
+      <ul>
+        {
+          links.map(({ href, label, hreflang }) => (
+            <li>
+              <a href={href} hreflang={hreflang} aria-current={current.startsWith(href) ? 'page' : undefined}>
+                {label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+    <a class="lang" href={altHref ?? localePath(altLang)} hreflang={altLang} lang={altLang}>
+      <span class="visually-hidden">{t('lang.switch')}</span>
+      <span aria-hidden="true">{altLabel}</span>
+    </a>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    border-block-end: 1px solid var(--color-rule);
+  }
+
+  .bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-4);
+    padding-block: var(--space-3);
+  }
+
+  .brand {
+    font-weight: 600;
+    font-size: var(--step-1);
+    color: var(--color-text);
+    text-decoration: none;
+    margin-inline-end: auto;
+  }
+
+  ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  nav a,
+  .lang {
+    color: var(--color-text-muted);
+    text-decoration: none;
+  }
+
+  nav a:hover,
+  nav a[aria-current='page'],
+  .lang:hover {
+    color: var(--color-primary);
+  }
+
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+</style>

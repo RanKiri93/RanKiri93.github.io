@@ -1,0 +1,161 @@
+---
+import { getCollection, render, type CollectionEntry } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ChapterList from '../../components/ChapterList.astro';
+import CourseGlyph from '../../components/CourseGlyph.astro';
+import CourseMap from '../../components/CourseMap.astro';
+import PdfReader from '../../components/PdfReader.astro';
+import { coursesWithGlyph, formatBytes, materialLabel } from '../../data/courses';
+import { getPdfInfo } from '../../lib/pdfInfo';
+
+export async function getStaticPaths() {
+  const courses = await getCollection('courses');
+  return courses.map((course) => ({ params: { code: course.id }, props: { course } }));
+}
+
+interface Props {
+  course: CollectionEntry<'courses'>;
+}
+
+const { course } = Astro.props;
+const { Content } = await render(course);
+const { title, code } = course.data;
+
+const materials = await Promise.all(
+  course.data.materials.map(async (material, i) => ({
+    ...material,
+    id: `reader-${code}-${i}`,
+    label: materialLabel[material.kind],
+    info: await getPdfInfo(material.file),
+  })),
+);
+const [main] = materials;
+const hasGlyph = coursesWithGlyph.has(code);
+---
+
+<BaseLayout title={title} description={`${title} (${code}): ${main.label} לקריאה ולהורדה.`} alternate={false}>
+  <div class="container course">
+    <p class="back"><a href="/courses/">כל הקורסים</a></p>
+
+    <header class:list={['head', { 'has-glyph': hasGlyph }]}>
+      <div class="intro">
+        <h1 style={`view-transition-name: title-${code}`}>{title}</h1>
+        <p class="meta">
+          קורס {code}. {main.label}, {main.info.pages} עמודים ב-{main.info.outline.length} פרקים.
+        </p>
+        <Content />
+        <div class="actions">
+          <a class="button primary" href={main.file} data-reader-open={main.id} data-page="continue">
+            <span data-label>התחלת קריאה</span>
+          </a>
+          <a class="button" href={main.file} download>הורדת הקובץ ({formatBytes(main.info.bytes)})</a>
+        </div>
+      </div>
+      {
+        hasGlyph && (
+          <div class="glyph">
+            <CourseGlyph code={code} />
+          </div>
+        )
+      }
+    </header>
+
+    {
+      materials.map((material) => (
+        <section class="chapters-section" aria-labelledby={`${material.id}-heading`}>
+          <h2 id={`${material.id}-heading`}>{materials.length > 1 ? material.label : 'פרקים'}</h2>
+          <CourseMap outline={material.info.outline} pages={material.info.pages} readerId={material.id} />
+          <ChapterList outline={material.info.outline} file={material.file} readerId={material.id} />
+        </section>
+      ))
+    }
+  </div>
+
+  {
+    materials.map((material) => (
+      <PdfReader
+        id={material.id}
+        src={material.file}
+        title={title}
+        storageKey={materials.length > 1 ? `${code}-${material.kind}` : code}
+        pages={material.info.pages}
+        aspect={material.info.aspect}
+        outline={material.info.outline}
+      />
+    ))
+  }
+</BaseLayout>
+
+<script>
+  // Hovering a chapter lights up its segment on the course map.
+  for (const section of document.querySelectorAll<HTMLElement>('.chapters-section')) {
+    const segments = section.querySelectorAll<HTMLElement>('.map [data-chapter-index]');
+    section.addEventListener('pointerover', (event) => {
+      const row = (event.target as Element).closest<HTMLElement>('.chapter');
+      segments.forEach((segment) => {
+        segment.toggleAttribute('data-active', segment.dataset.chapterIndex === row?.dataset.chapterIndex);
+      });
+    });
+    section.addEventListener('pointerleave', () => segments.forEach((s) => s.removeAttribute('data-active')));
+  }
+</script>
+
+<style>
+  .course {
+    padding-block: var(--space-4) var(--space-6);
+  }
+
+  .back {
+    margin: 0 0 var(--space-4);
+    font-size: var(--step--1);
+  }
+
+  .head {
+    display: grid;
+    gap: var(--space-5);
+    align-items: center;
+    padding-block-end: var(--space-5);
+  }
+
+  .head.has-glyph {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 24rem);
+  }
+
+  h1 {
+    width: fit-content;
+    margin: 0 0 var(--space-2);
+    font-size: clamp(var(--step-3), 5vw, var(--step-5));
+    line-height: 1.1;
+  }
+
+  .meta {
+    margin: 0 0 var(--space-4);
+    color: var(--color-text-muted);
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  .chapters-section {
+    max-width: 48rem;
+  }
+
+  .chapters-section h2 {
+    margin: 0;
+    font-size: var(--step-2);
+  }
+
+  @media (max-width: 48rem) {
+    .head.has-glyph {
+      grid-template-columns: 1fr;
+    }
+
+    .glyph {
+      grid-row: 1;
+      max-width: 18rem;
+    }
+  }
+</style>

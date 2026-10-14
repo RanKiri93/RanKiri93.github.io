@@ -1,0 +1,27 @@
+---
+import '../../styles/glyphs.css';
+import { H, W } from './geom';
+
+export interface GlyphProps {
+  /** 'full' plays the build-up once (course page); 'thumb' is static (course list). */
+  variant?: 'full' | 'thumb';
+  transitionName?: string;
+}
+
+interface Props extends GlyphProps {
+  /** What the picture shows, for screen readers. */
+  label: string;
+}
+
+const { variant = 'full', transitionName, label } = Astro.props;
+---
+
+<svg
+  class:list={['glyph', `glyph-${variant}`]}
+  viewBox={`0 0 ${W} ${H}`}
+  role="img"
+  aria-label={label}
+  style={transitionName ? `view-transition-name: ${transitionName}` : undefined}
+>
+  <slot />
+</svg>

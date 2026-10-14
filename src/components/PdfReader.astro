@@ -1,0 +1,358 @@
+---
+import type { OutlineItem } from '../lib/pdfInfo';
+import { chapterTitle } from '../data/courses';
+
+/**
+ * Full-screen reader for a course PDF, rendered with PDF.js (loaded on first
+ * open). Without JavaScript, the links that open it fall back to the PDF itself.
+ */
+interface Props {
+  id: string;
+  src: string;
+  title: string;
+  /** Key for remembering the last page read, e.g. the course number. */
+  storageKey: string;
+  pages: number;
+  aspect: number;
+  outline: OutlineItem[];
+}
+
+const { id, src, title, storageKey, pages, aspect, outline } = Astro.props;
+---
+
+<dialog
+  class="reader"
+  id={id}
+  aria-label={`קריאה: ${title}`}
+  data-src={src}
+  data-pages={pages}
+  data-aspect={aspect}
+  data-storage-key={`reader:${storageKey}:page`}
+>
+  <div class="shell">
+    <header class="bar">
+      <button type="button" class="icon" data-close aria-label="סגירת הקורא">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+      </button>
+      <button type="button" class="toc-toggle" aria-expanded="false" aria-controls={`${id}-toc`}>פרקים</button>
+      <p class="where" data-chapter>{title}</p>
+      <label class="page-field">
+        <span>עמוד</span>
+        <input type="number" inputmode="numeric" min="1" max={pages} value="1" data-page-input />
+        <span>מתוך {pages}</span>
+      </label>
+      <a class="download" href={src} download>הורדה</a>
+    </header>
+
+    <nav class="toc" id={`${id}-toc`} aria-label="פרקים">
+      <p class="toc-title">{title}</p>
+      <ol>
+        {
+          outline.map((chapter, i) => (
+            <li>
+              <a
+                href={`#page=${chapter.page}`}
+                data-goto={chapter.page}
+                data-end={chapter.endPage}
+                data-chapter-title={chapterTitle(chapter.title, i)}
+              >
+                <span class="toc-num">{i + 1}</span>
+                {chapterTitle(chapter.title, i)}
+              </a>
+              {chapter.items.length > 0 && (
+                <ol>
+                  {chapter.items.map((item) => (
+                    <li>
+                      <a href={`#page=${item.page}`} data-goto={item.page}>
+                        {item.title}
+                      </a>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </li>
+          ))
+        }
+      </ol>
+    </nav>
+
+    <div class="desk" tabindex="0" aria-label="עמודי הקובץ" data-desk style={`--aspect: ${aspect}`}>
+      <p class="status" role="status" data-status></p>
+    </div>
+  </div>
+</dialog>
+
+<script>
+  import { initReaders } from '../scripts/reader';
+  initReaders();
+</script>
+
+<style>
+  .reader {
+    width: 100%;
+    max-width: none;
+    height: 100dvh;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: var(--color-desk);
+    color: var(--color-text);
+  }
+
+  .reader::backdrop {
+    background: transparent;
+  }
+
+  .shell {
+    display: grid;
+    /* minmax(0, …) so a long title in the bar can't widen the page column. */
+    grid-template-columns: 17rem minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    height: 100%;
+  }
+
+  .bar {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    background: var(--color-surface);
+    border-block-end: 1px solid var(--color-rule);
+  }
+
+  .icon {
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--color-text);
+    cursor: pointer;
+  }
+
+  .icon:hover {
+    background: var(--color-bg);
+  }
+
+  .icon svg {
+    width: 1.25rem;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+  }
+
+  .toc-toggle {
+    display: none;
+    padding: var(--space-1) var(--space-3);
+    border: 1px solid var(--color-rule);
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--color-text);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .where {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .page-field {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--color-text-muted);
+    font-size: var(--step--1);
+    white-space: nowrap;
+  }
+
+  .page-field input {
+    width: 4.5em;
+    padding: var(--space-1) var(--space-2);
+    border: 1px solid var(--color-rule);
+    border-radius: var(--radius);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font: inherit;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+  }
+
+  .download {
+    font-size: var(--step--1);
+  }
+
+  .toc {
+    overflow-y: auto;
+    padding: var(--space-4) var(--space-3);
+    background: var(--color-surface);
+    border-inline-end: 1px solid var(--color-rule);
+  }
+
+  .toc-title {
+    margin: 0 0 var(--space-3);
+    color: var(--color-text-muted);
+    font-size: var(--step--1);
+  }
+
+  .toc ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .toc ol ol {
+    margin-block-end: var(--space-2);
+    padding-inline-start: 1.75rem;
+  }
+
+  .toc a {
+    display: block;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius);
+    color: var(--color-text);
+    text-decoration: none;
+    line-height: 1.35;
+  }
+
+  .toc > ol > li > a {
+    display: flex;
+    gap: var(--space-2);
+    font-weight: 600;
+    margin-block-start: var(--space-2);
+  }
+
+  .toc ol ol a {
+    font-size: var(--step--1);
+    color: var(--color-text-muted);
+  }
+
+  .toc a:hover {
+    background: var(--color-bg);
+  }
+
+  .toc a[aria-current='true'] {
+    background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+    color: var(--color-primary);
+  }
+
+  .toc-num {
+    min-width: 1.25rem;
+    color: var(--color-primary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .desk {
+    position: relative;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: var(--space-4) var(--space-3) var(--space-6);
+  }
+
+  .desk:focus-visible {
+    outline-offset: -4px;
+  }
+
+  .status {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    margin: 0;
+    color: var(--color-text-muted);
+    pointer-events: none;
+  }
+
+  .status:empty {
+    display: none;
+  }
+
+  .status :global(a) {
+    pointer-events: auto;
+  }
+
+  .desk :global(.sheet) {
+    position: relative;
+    width: min(100%, 52rem);
+    aspect-ratio: 1 / var(--aspect);
+    margin: 0 auto var(--space-3);
+    background: #fff;
+    border-radius: 2px;
+    box-shadow:
+      0 0 0 1px rgb(27 34 51 / 0.06),
+      0 1px 3px rgb(27 34 51 / 0.08);
+  }
+
+  /* Page number shows through until the page is drawn. */
+  .desk :global(.sheet)::after {
+    content: attr(data-page);
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: #c5ccd8;
+    font-size: var(--step-3);
+  }
+
+  .desk :global(.sheet.is-drawn)::after {
+    content: none;
+  }
+
+  .desk :global(.sheet canvas) {
+    width: 100%;
+    height: 100%;
+    border-radius: 2px;
+  }
+
+  @media (max-width: 52rem) {
+    .shell {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .bar {
+      gap: var(--space-2);
+      padding-inline: var(--space-2);
+    }
+
+    .page-field input {
+      width: 3.5em;
+    }
+
+    .toc-toggle {
+      display: block;
+    }
+
+    .toc {
+      display: none;
+      grid-row: 2;
+      grid-column: 1;
+      z-index: 1;
+      border-inline-end: 0;
+    }
+
+    .shell.toc-open .toc {
+      display: block;
+    }
+
+    .desk {
+      grid-row: 2;
+      grid-column: 1;
+      padding-inline: var(--space-2);
+    }
+
+    .page-field > span:first-child,
+    .download {
+      display: none;
+    }
+  }
+</style>

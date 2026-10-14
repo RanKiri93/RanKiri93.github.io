@@ -1,0 +1,91 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import CourseGlyph from '../../components/CourseGlyph.astro';
+import CourseMap from '../../components/CourseMap.astro';
+import { coursesWithGlyph, materialLabel, roleHeading } from '../../data/courses';
+import { getPdfInfo } from '../../lib/pdfInfo';
+
+const courses = await Promise.all(
+  (await getCollection('courses'))
+    .sort((a, b) => a.data.code.localeCompare(b.data.code))
+    .map(async (course) => ({ ...course, info: await getPdfInfo(course.data.materials[0].file) })),
+);
+const roles = ['lecturer', 'ta'] as const;
+---
+
+<BaseLayout title="קורסים" description="חומרים מקורסי מתמטיקה שלימדתי ותרגלתי בטכניון." alternate={false}>
+  <div class="container page">
+    <h1>קורסים</h1>
+    <p class="lede">חומרים מקורסי מתמטיקה שלימדתי ותרגלתי בטכניון, פתוחים לכולם.</p>
+    {
+      roles.map((role) => (
+        <section>
+          <h2>{roleHeading[role]}</h2>
+          <ul class="courses">
+            {courses
+              .filter((course) => course.data.role === role)
+              .map(({ id, data, info }) => (
+                <li>
+                  <a href={`/courses/${id}/`} class="course-link">
+                    <span class="name" style={`view-transition-name: title-${id}`}>
+                      {data.title}
+                    </span>
+                    <span class="meta">
+                      {data.code}. {data.materials.map((m) => materialLabel[m.kind]).join(', ')}, {info.pages} עמודים
+                      ב-{info.outline.length} פרקים
+                    </span>
+                    <CourseMap outline={info.outline} pages={info.pages} size="small" />
+                  </a>
+                  {coursesWithGlyph.has(id) && (
+                    <div class="thumb" aria-hidden="true">
+                      <CourseGlyph code={id} variant="thumb" />
+                    </div>
+                  )}
+                </li>
+              ))}
+          </ul>
+        </section>
+      ))
+    }
+  </div>
+</BaseLayout>
+
+<style>
+  .courses {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .courses li {
+    display: grid;
+    grid-template-columns: 1fr 7rem;
+    gap: var(--space-4);
+    align-items: center;
+    border-block-end: 1px solid var(--color-rule);
+  }
+
+  .course-link {
+    display: grid;
+    gap: var(--space-1);
+    padding-block: var(--space-3);
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .name {
+    width: fit-content;
+    font-size: var(--step-1);
+    font-weight: 600;
+  }
+
+  .course-link:hover .name {
+    color: var(--color-primary);
+    text-decoration: underline;
+  }
+
+  .course-link :global(.map) {
+    margin-block-start: var(--space-1);
+  }
+</style>

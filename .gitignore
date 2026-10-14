@@ -1,0 +1,21 @@
+# Astro build output and generated types
+dist/
+.astro/
+
+# Dependencies
+node_modules/
+
+# Logs and environment
+npm-debug.log*
+.env
+.env.*
+
+# Hugo (legacy, removed once migration is complete)
+.hugo_build.lock
+resources/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json

@@ -1,0 +1,62 @@
+---
+/**
+ * 104281, Calculus 2: Darboux sums. Lower sums are the cobalt rectangles; the
+ * amber slivers are the gap U(f,P) − L(f,P), which shrinks as the partition is
+ * refined (4, then 8, then 16 pieces): f is integrable.
+ */
+import GlyphFrame, { type GlyphProps } from './GlyphFrame.astro';
+import { r, rangeFrame, toPath, type Pt } from './geom';
+
+type Props = GlyphProps;
+
+const A = 0;
+const B = 2;
+const frame = rangeFrame(A, B, 0, 1.15, 8);
+const f = (x: number) => 0.55 + 0.3 * Math.sin(4.6 * x + 0.4) + 0.12 * x;
+
+const curve: Pt[] = Array.from({ length: 121 }, (_, i) => {
+  const x = A + (i / 120) * (B - A);
+  return [frame.x(x), frame.y(f(x))];
+});
+
+function partition(pieces: number) {
+  return Array.from({ length: pieces }, (_, i) => {
+    const x0 = A + (i * (B - A)) / pieces;
+    const x1 = A + ((i + 1) * (B - A)) / pieces;
+    const samples = Array.from({ length: 41 }, (_, j) => f(x0 + (j / 40) * (x1 - x0)));
+    const lo = Math.min(...samples);
+    const hi = Math.max(...samples);
+    return {
+      x: r(frame.x(x0)),
+      width: r(frame.x(x1) - frame.x(x0)),
+      lowerY: r(frame.y(lo)),
+      upperY: r(frame.y(hi)),
+      base: r(frame.y(0)),
+    };
+  });
+}
+
+const stages = [
+  { pieces: 4, t: 150, interim: true },
+  { pieces: 8, t: 850, interim: true },
+  { pieces: 16, t: 1550, interim: false },
+].map((stage) => ({ ...stage, cells: partition(stage.pieces) }));
+---
+
+<GlyphFrame {...Astro.props} label="סכומי דרבו עליונים ותחתונים: ההפרש ביניהם קטן כשהחלוקה מתעדנת">
+  <line class="axis" x1={frame.x(A)} x2={frame.x(B)} y1={frame.y(0)} y2={frame.y(0)}></line>
+  {
+    stages.map(({ cells, t, interim }) => (
+      <g class={interim ? 'interim' : 'fade'} style={`--t: ${t}; --dur: ${interim ? 800 : 500}ms`}>
+        {cells.map(({ x, width, lowerY, upperY, base }) => (
+          <>
+            <rect class="tint" x={x} y={lowerY} width={width} height={base - lowerY} style="opacity: 0.18" />
+            <rect class="accent-fill" x={x} y={upperY} width={width} height={lowerY - upperY} />
+            <path class="soft" d={`M${x} ${base}V${upperY}H${r(x + width)}V${base}`} style="opacity: 0.35" />
+          </>
+        ))}
+      </g>
+    ))
+  }
+  <path class="main" d={toPath(curve)}></path>
+</GlyphFrame>

@@ -1,0 +1,101 @@
+---
+/**
+ * 104168, Algebra B: diagonalization. The symmetric matrix A = [[1.5, 0.5], [0.5, 1]]
+ * maps the grid and the unit circle to their images; the eigen-directions
+ * (amber) stay put and the arrows are λ₁v₁ and λ₂v₂.
+ *
+ * The build-up moves along (1 − t)I + tA, which shares A's eigenvectors for
+ * every t, so the amber lines really are invariant throughout the motion.
+ */
+import GlyphFrame, { type GlyphProps } from './GlyphFrame.astro';
+import { H, W, equalFrame, toPath, type Pt } from './geom';
+
+type Props = GlyphProps;
+
+const U = 30;
+const frame = equalFrame(U);
+const [a, b, d] = [1.5, 0.5, 1]; // A = [[a, b], [b, d]]
+
+const mean = (a + d) / 2;
+const spread = Math.sqrt(((a - d) / 2) ** 2 + b ** 2);
+const eigen = [mean + spread, mean - spread].map((value) => {
+  const v: Pt = [b, value - a];
+  const n = Math.hypot(v[0], v[1]);
+  return { value, v: [v[0] / n, v[1] / n] as Pt };
+});
+
+const lines: string[] = [];
+for (let k = -5; k <= 5; k++) {
+  lines.push(toPath([[frame.x(k), frame.y(-4)], [frame.x(k), frame.y(4)]]));
+  lines.push(toPath([[frame.x(-5), frame.y(k)], [frame.x(5), frame.y(k)]]));
+}
+const gridPath = lines.join('');
+const circle = toPath(
+  Array.from({ length: 97 }, (_, i): Pt => {
+    const t = (i / 96) * 2 * Math.PI;
+    return [frame.x(Math.cos(t)), frame.y(Math.sin(t))];
+  }),
+);
+
+const eigenLines = eigen.map(({ v }) => toPath([[frame.x(-6 * v[0]), frame.y(-6 * v[1])], [frame.x(6 * v[0]), frame.y(6 * v[1])]]));
+const arrows = eigen.map(({ value, v }) => ({
+  d: toPath([[frame.x(0), frame.y(0)], [frame.x(value * v[0]), frame.y(value * v[1])]]),
+  tip: [frame.x(value * v[0]), frame.y(value * v[1])] as Pt,
+}));
+
+// Screen y points down, so the off-diagonal entries flip sign in CSS matrix().
+const cssMatrix = `matrix(${a}, ${-b}, ${-b}, ${d}, 0, 0)`;
+const clipId = `eigen-clip-${Astro.props.variant ?? 'full'}`;
+---
+
+<GlyphFrame {...Astro.props} label="לכסון: העתקה ליניארית מעוותת את הרשת ואת מעגל היחידה, והכיוונים העצמיים נשארים במקומם">
+  <defs>
+    <clipPath id={clipId}><rect width={W} height={H}></rect></clipPath>
+  </defs>
+  <g clip-path={`url(#${clipId})`}>
+    <path class="axis" d={gridPath}></path>
+    {eigenLines.map((line) => <path class="accent-line fade" d={line} stroke-dasharray="3 4" style="--t: 0; opacity: 0.7" />)}
+    <g class="morph" style={`transform: ${cssMatrix}`}>
+      <path class="soft non-scaling" d={gridPath} style="opacity: 0.28"></path>
+      <path class="main non-scaling" d={circle}></path>
+    </g>
+  </g>
+  {
+    arrows.map(({ d, tip }, i) => (
+      <>
+        <path class="accent-line draw" d={d} pathLength="1" style={`--t: ${1450 + i * 150}; --dur: 350ms; stroke-width: 2`} />
+        <circle class="accent pop" cx={tip[0]} cy={tip[1]} r="2.8" style={`--t: ${1700 + i * 150}`} />
+      </>
+    ))
+  }
+</GlyphFrame>
+
+<style>
+  .morph {
+    transform-box: view-box;
+    transform-origin: 120px 75px;
+  }
+
+  :global(.glyph-full) .morph {
+    animation: eigen-morph 1100ms cubic-bezier(0.45, 0, 0.2, 1) 300ms both;
+  }
+
+  /* Waypoints on (1 − t)I + tA, so intermediate maps keep the eigenvectors. */
+  @keyframes eigen-morph {
+    0% {
+      transform: matrix(1, 0, 0, 1, 0, 0);
+    }
+    25% {
+      transform: matrix(1.125, -0.125, -0.125, 1, 0, 0);
+    }
+    50% {
+      transform: matrix(1.25, -0.25, -0.25, 1, 0, 0);
+    }
+    75% {
+      transform: matrix(1.375, -0.375, -0.375, 1, 0, 0);
+    }
+    100% {
+      transform: matrix(1.5, -0.5, -0.5, 1, 0, 0);
+    }
+  }
+</style>

@@ -1,0 +1,54 @@
+---
+/**
+ * 104215, complex functions: flow past a cylinder. The streamlines are the
+ * level curves Im(z + 1/z) = c of the complex potential, bending around the
+ * unit disk; the stagnation points z = ±1 are amber.
+ */
+import GlyphFrame, { type GlyphProps } from './GlyphFrame.astro';
+import { equalFrame, toPath, type Pt } from './geom';
+
+type Props = GlyphProps;
+
+const frame = equalFrame(30);
+const X_MAX = 4;
+
+/** y > 0 on the streamline ψ = y − y/(x² + y²) = c (c > 0), by bisection. */
+function streamY(x: number, c: number): number {
+  const psi = (y: number) => y - y / (x * x + y * y) - c;
+  let lo = Math.sqrt(Math.max(0, 1 - x * x)) + 1e-9;
+  let hi = c + 3;
+  for (let i = 0; i < 60; i++) {
+    const mid = (lo + hi) / 2;
+    if (psi(mid) < 0) lo = mid;
+    else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+
+function streamline(c: number, sign: 1 | -1): string {
+  const points: Pt[] = [];
+  for (let i = 0; i <= 160; i++) {
+    const x = -X_MAX + (i / 160) * 2 * X_MAX;
+    points.push([frame.x(x), frame.y(sign * streamY(x, c))]);
+  }
+  return toPath(points);
+}
+
+const levels = [0.12, 0.4, 0.8, 1.3, 1.9];
+const lines = levels.flatMap((c, i) => [
+  { d: streamline(c, 1), t: 200 + i * 130 },
+  { d: streamline(c, -1), t: 200 + i * 130 },
+]);
+const axisLeft = `M${frame.x(-X_MAX)} ${frame.y(0)}L${frame.x(-1)} ${frame.y(0)}`;
+const axisRight = `M${frame.x(1)} ${frame.y(0)}L${frame.x(X_MAX)} ${frame.y(0)}`;
+---
+
+<GlyphFrame {...Astro.props} label="זרימה פוטנציאלית סביב גליל: קווי זרם של הפוטנציאל המרוכב z ועוד 1 חלקי z">
+  <circle class="tint fade" cx={frame.x(0)} cy={frame.y(0)} r="30" style="--t: 0"></circle>
+  <circle class="main draw" cx={frame.x(0)} cy={frame.y(0)} r="30" pathLength="1" style="--t: 0; --dur: 700ms"></circle>
+  <path class="soft draw" d={axisLeft} pathLength="1" style="--t: 200; --dur: 500ms"></path>
+  <path class="soft draw" d={axisRight} pathLength="1" style="--t: 200; --dur: 500ms"></path>
+  {lines.map(({ d, t }) => <path class="soft draw" d={d} pathLength="1" style={`--t: ${t}; --dur: 1000ms`} />)}
+  <circle class="accent pop" cx={frame.x(-1)} cy={frame.y(0)} r="3" style="--t: 1100"></circle>
+  <circle class="accent pop" cx={frame.x(1)} cy={frame.y(0)} r="3" style="--t: 1200"></circle>
+</GlyphFrame>

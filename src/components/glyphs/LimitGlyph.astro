@@ -1,0 +1,45 @@
+---
+/**
+ * 104031, Calculus 1: the ε–N definition of a limit. a_n = L + (−1)^n·1.2/n^0.85
+ * oscillates towards L; from N on, every term lies in the band (L − ε, L + ε),
+ * and those terms are amber.
+ */
+import GlyphFrame, { type GlyphProps } from './GlyphFrame.astro';
+import { rangeFrame } from './geom';
+
+type Props = GlyphProps;
+
+const COUNT = 30;
+const EPSILON = 0.2;
+const frame = rangeFrame(0.2, COUNT + 0.8, -1.3, 1.3);
+const a = (n: number) => ((-1) ** n * 1.2) / n ** 0.85;
+
+const terms = Array.from({ length: COUNT }, (_, i) => ({ n: i + 1, value: a(i + 1) }));
+// Smallest N with |a_n − L| < ε for every n ≥ N (the sequence is shrinking, so the first such n).
+const N = terms.find(({ n }) => terms.slice(n - 1).every((term) => Math.abs(term.value) < EPSILON))!.n;
+const xN = frame.x(N - 0.5);
+---
+
+<GlyphFrame {...Astro.props} label="הגדרת הגבול של סדרה: מאינדקס מסוים כל האיברים נמצאים ברצועה סביב הגבול">
+  <rect
+    class="tint fade"
+    x={frame.x(0.2)}
+    y={frame.y(EPSILON)}
+    width={frame.x(COUNT + 0.8) - frame.x(0.2)}
+    height={frame.y(-EPSILON) - frame.y(EPSILON)}
+    style="--t: 0"></rect>
+  <line class="main" x1={frame.x(0.2)} x2={frame.x(COUNT + 0.8)} y1={frame.y(0)} y2={frame.y(0)}></line>
+  <line class="ink fade" x1={xN} x2={xN} y1={frame.y(1.3)} y2={frame.y(-1.3)} stroke-dasharray="3 3" style="--t: 1100"
+  ></line>
+  {
+    terms.map(({ n, value }) => (
+      <circle
+        class={n >= N ? 'accent pop' : 'dot pop'}
+        cx={frame.x(n)}
+        cy={frame.y(value)}
+        r={n >= N ? 2.6 : 2.4}
+        style={`--t: ${150 + n * 45}`}
+      />
+    ))
+  }
+</GlyphFrame>

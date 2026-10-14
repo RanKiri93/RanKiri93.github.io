@@ -1,0 +1,59 @@
+---
+/**
+ * 104285, ODE: slope field of the logistic equation y' = y(1 − y). Solutions
+ * flow away from the unstable equilibrium y = 0 (dashed amber) and settle on
+ * the stable one, y = 1 (solid amber).
+ */
+import GlyphFrame, { type GlyphProps } from './GlyphFrame.astro';
+import { directionField, grid, rangeFrame, toPath, type Pt } from './geom';
+
+type Props = GlyphProps;
+
+const T_MAX = 9;
+const frame = rangeFrame(0, T_MAX, -0.45, 1.65);
+const slope = (y: number) => y * (1 - y);
+
+/** Exact solution through (0, y0). */
+function solution(y0: number): string {
+  const points: Pt[] = [];
+  for (let i = 0; i <= 120; i++) {
+    const t = (i / 120) * T_MAX;
+    const y = y0 === 0 ? 0 : 1 / (1 + ((1 - y0) / y0) * Math.exp(-t));
+    if (y < -0.45 || y > 1.65) break;
+    points.push([frame.x(t), frame.y(y)]);
+  }
+  return toPath(points);
+}
+
+const curves = [0.015, 0.06, 0.2, 0.5, 1.6, -0.004].map((y0, i) => ({ d: solution(y0), t: 150 + i * 150 }));
+
+const field = directionField(
+  grid(0.3, T_MAX - 0.3, -0.3, 1.5, 0.3)
+    .filter(([, y]) => Math.abs(y) > 0.05 && Math.abs(y - 1) > 0.05)
+    .map(([t, y]): Pt => [frame.x(t), frame.y(y)]),
+  ([, sy]) => {
+    const y = (frame.y(0) - sy) / frame.ky;
+    return [frame.kx, -frame.ky * slope(y)];
+  },
+  7,
+);
+---
+
+<GlyphFrame {...Astro.props} label="שדה כיוונים של המשוואה הלוגיסטית ופתרונות המתכנסים לשיווי משקל יציב">
+  <path class="field fade" d={field} style="--t: 0"></path>
+  <line class="accent-line fade" x1={frame.x(0)} x2={frame.x(T_MAX)} y1={frame.y(1)} y2={frame.y(1)} style="--t: 1300"></line>
+  <line
+    class="accent-line fade"
+    x1={frame.x(0)}
+    x2={frame.x(T_MAX)}
+    y1={frame.y(0)}
+    y2={frame.y(0)}
+    stroke-dasharray="4 4"
+    style="--t: 1300"
+  ></line>
+  {
+    curves.map(({ d, t }, i) => (
+      <path class={i === 2 ? 'main draw' : 'soft draw'} d={d} pathLength="1" style={`--t: ${t}; --dur: 1100ms`} />
+    ))
+  }
+</GlyphFrame>

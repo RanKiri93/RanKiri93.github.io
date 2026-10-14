@@ -1,0 +1,32 @@
+---
+import DarbouxGlyph from './glyphs/DarbouxGlyph.astro';
+import EigenGlyph from './glyphs/EigenGlyph.astro';
+import FlowGlyph from './glyphs/FlowGlyph.astro';
+import FourierGlyph from './glyphs/FourierGlyph.astro';
+import LagrangeGlyph from './glyphs/LagrangeGlyph.astro';
+import LimitGlyph from './glyphs/LimitGlyph.astro';
+import PhasePortraitGlyph from './glyphs/PhasePortraitGlyph.astro';
+import SlopeFieldGlyph from './glyphs/SlopeFieldGlyph.astro';
+
+interface Props {
+  code: string;
+  variant?: 'full' | 'thumb';
+}
+
+/** Each course's picture; keep in sync with coursesWithGlyph in data/courses.ts. */
+const glyphs = {
+  '104031': LimitGlyph,
+  '104136': PhasePortraitGlyph,
+  '104168': EigenGlyph,
+  '104214': FourierGlyph,
+  '104215': FlowGlyph,
+  '104281': DarbouxGlyph,
+  '104285': SlopeFieldGlyph,
+  '104295': LagrangeGlyph,
+} as const;
+
+const { code, variant = 'full' } = Astro.props;
+const Glyph = glyphs[code as keyof typeof glyphs];
+---
+
+{Glyph && <Glyph variant={variant} transitionName={`glyph-${code}`} />}

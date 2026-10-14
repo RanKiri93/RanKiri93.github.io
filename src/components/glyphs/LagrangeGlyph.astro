@@ -1,0 +1,56 @@
+---
+/**
+ * 104295, Calculus 3: Lagrange multipliers. Level curves of f(x, y) = x² + 2.2y²
+ * grow until one touches the constraint x + 1.4y = c; at the amber point the
+ * gradients ∇f and ∇g are parallel, so f is minimal on the line there.
+ */
+import GlyphFrame, { type GlyphProps } from './GlyphFrame.astro';
+import { equalFrame, toPath, type Pt } from './geom';
+
+type Props = GlyphProps;
+
+const frame = equalFrame(30, 0.4, 0.15);
+const K = 2.2; // f = x² + K y²
+const G: Pt = [1, 1.4]; // g = G · (x, y)
+const C = 2.4;
+
+// ∇f = λ∇g: (2x, 2Ky) = λ(G₀, G₁)  ⇒  x = λG₀/2, y = λG₁/(2K)
+const lambda = C / (G[0] ** 2 / 2 + G[1] ** 2 / (2 * K));
+const p: Pt = [(lambda * G[0]) / 2, (lambda * G[1]) / (2 * K)];
+const level = p[0] ** 2 + K * p[1] ** 2;
+
+function ellipse(value: number): string {
+  const points: Pt[] = Array.from({ length: 97 }, (_, i) => {
+    const t = (i / 96) * 2 * Math.PI;
+    return [frame.x(Math.sqrt(value) * Math.cos(t)), frame.y(Math.sqrt(value / K) * Math.sin(t))];
+  });
+  return toPath(points) + 'Z';
+}
+
+const levels = [0.12, 0.35, 0.65, 1, 1.5, 2.2].map((scale, i) => ({
+  d: ellipse(level * scale),
+  tangent: scale === 1,
+  t: 100 + i * 170,
+}));
+
+// Constraint line across the frame, and the gradient direction at p (scaled for display).
+const lineAt = (x: number): Pt => [frame.x(x), frame.y((C - G[0] * x) / G[1])];
+const constraint = toPath([lineAt(-1.2), lineAt(4.4)]);
+const normal = Math.hypot(G[0], G[1]);
+const arrowEnd: Pt = [frame.x(p[0] + (0.7 * G[0]) / normal), frame.y(p[1] + (0.7 * G[1]) / normal)];
+---
+
+<GlyphFrame {...Astro.props} label="כופלי לגרנז': קו גובה של הפונקציה משיק לאילוץ בנקודת הקיצון">
+  <path class="ink draw" d={constraint} pathLength="1" style="--t: 0; --dur: 700ms"></path>
+  {
+    levels.map(({ d, tangent, t }) => (
+      <path class={tangent ? 'main draw' : 'soft draw'} d={d} pathLength="1" style={`--t: ${t}; --dur: 700ms`} />
+    ))
+  }
+  <path
+    class="accent-line draw"
+    d={toPath([[frame.x(p[0]), frame.y(p[1])], arrowEnd])}
+    pathLength="1"
+    style="--t: 1350; --dur: 400ms"></path>
+  <circle class="accent pop" cx={frame.x(p[0])} cy={frame.y(p[1])} r="3.2" style="--t: 1250"></circle>
+</GlyphFrame>

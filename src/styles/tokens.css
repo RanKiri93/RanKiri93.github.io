@@ -1,0 +1,65 @@
+/*
+ * Design tokens. Light is the default; dark follows the OS unless the
+ * page sets data-theme explicitly (a toggle can set it later).
+ */
+:root {
+  color-scheme: light;
+
+  --color-bg: #f3f5f8;          /* Mist */
+  --color-surface: #ffffff;
+  --color-text: #1b2233;        /* Ink */
+  --color-text-muted: #5b6478;  /* Slate */
+  --color-primary: #2f4fd6;     /* Cobalt: links, the convex boundary */
+  --color-accent: #e3a21a;      /* Spectrum amber: eigenvalues, focus only */
+  --color-rule: #dce1ea;
+  --color-desk: #e3e7ee;        /* behind PDF pages in the reader */
+
+  --font-sans: 'IBM Plex Sans Hebrew', system-ui, sans-serif;
+
+  /* Modular scale, ratio 1.25 */
+  --step--1: 0.8rem;
+  --step-0: 1rem;
+  --step-1: 1.25rem;
+  --step-2: 1.563rem;
+  --step-3: 1.953rem;
+  --step-4: 2.441rem;
+  --step-5: 3.052rem;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 1rem;
+  --space-4: 1.5rem;
+  --space-5: 2.5rem;
+  --space-6: 4rem;
+
+  --measure: 68ch;
+  --page-width: 72rem;
+  --gutter: clamp(1rem, 4vw, 2.5rem);
+  --radius: 6px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --color-bg: #0f1420;
+    --color-surface: #161c2b;
+    --color-text: #e6e9f0;
+    --color-text-muted: #9aa3b5;
+    --color-primary: #7c93ff;
+    --color-accent: #f2b84b;
+    --color-rule: #262e40;
+    --color-desk: #0a0e17;
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-bg: #0f1420;
+  --color-surface: #161c2b;
+  --color-text: #e6e9f0;
+  --color-text-muted: #9aa3b5;
+  --color-primary: #7c93ff;
+  --color-accent: #f2b84b;
+  --color-rule: #262e40;
+  --color-desk: #0a0e17;
+}

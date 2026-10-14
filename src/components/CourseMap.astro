@@ -1,0 +1,56 @@
+---
+import type { OutlineItem } from '../lib/pdfInfo';
+
+/** The course drawn to scale: one segment per chapter, plus a "you stopped here" mark. */
+interface Props {
+  outline: OutlineItem[];
+  pages: number;
+  readerId?: string;
+  size?: 'large' | 'small';
+}
+
+const { outline, pages, readerId, size = 'large' } = Astro.props;
+---
+
+<div class:list={['map', `map-${size}`]} aria-hidden="true" data-map-for={readerId} data-pages={pages}>
+  {outline.map((chapter, i) => <span data-chapter-index={i} style={`flex-grow: ${chapter.endPage - chapter.page + 1}`} />)}
+  {readerId && <span class="mark" data-progress hidden />}
+</div>
+
+<style>
+  .map {
+    position: relative;
+    display: flex;
+    gap: 3px;
+  }
+
+  .map > span:not(.mark) {
+    flex-basis: 0;
+    background: var(--color-primary);
+    opacity: 0.28;
+    border-radius: 1px;
+    transition: opacity 150ms;
+  }
+
+  .map-large {
+    height: 0.5rem;
+    margin-block: var(--space-3) var(--space-4);
+  }
+
+  .map-small {
+    height: 0.25rem;
+    max-width: 16rem;
+  }
+
+  .map > span[data-active] {
+    opacity: 1;
+  }
+
+  .mark {
+    position: absolute;
+    inset-block: -0.3rem;
+    width: 3px;
+    border-radius: 2px;
+    background: var(--color-accent);
+  }
+</style>

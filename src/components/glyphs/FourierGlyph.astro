@@ -1,0 +1,65 @@
+---
+/**
+ * 104214, Fourier series: the square wave f(t) = (4/π) Σ_{k odd} sin(kt)/k.
+ * Partial sums S_1, S_3, S_7 build up towards S_31 (Gibbs overshoot and all);
+ * the amber stems are the coefficients b_k = 4/(πk), i.e. the spectrum.
+ */
+import GlyphFrame, { type GlyphProps } from './GlyphFrame.astro';
+import { W, r, toPath, type Pt } from './geom';
+
+type Props = GlyphProps;
+
+const WAVE_MID = 50;
+const WAVE_AMP = 32;
+const STEM_BASE = 142;
+const STEM_MAX = 36;
+const PERIODS = 2;
+const SAMPLES = 720;
+
+function partialSum(N: number): string {
+  const points: Pt[] = [];
+  for (let i = 0; i <= SAMPLES; i++) {
+    const t = (i / SAMPLES) * PERIODS * 2 * Math.PI;
+    let y = 0;
+    for (let k = 1; k <= N; k += 2) y += Math.sin(k * t) / k;
+    points.push([(i / SAMPLES) * W, WAVE_MID - (4 / Math.PI) * y * WAVE_AMP]);
+  }
+  return toPath(points);
+}
+
+const partials = [1, 3, 7].map((N, order) => ({ d: partialSum(N), order }));
+const limit = partialSum(31);
+
+const ks = Array.from({ length: 16 }, (_, i) => 2 * i + 1);
+const stems = ks.map((k, i) => ({
+  x: r(8 + (i * (W - 16)) / (ks.length - 1)),
+  h: r(STEM_MAX / k),
+  // Each stem appears with the partial sum that first includes it.
+  t: 250 + (k === 1 ? 0 : k === 3 ? 1 : k <= 7 ? 2 : 3) * 420 + i * 25,
+}));
+---
+
+<GlyphFrame {...Astro.props} label="סכומים חלקיים של טור פוריה של גל ריבועי, והמקדמים שלו">
+  <line class="axis" x1="0" x2={W} y1={WAVE_MID} y2={WAVE_MID}></line>
+  {
+    Astro.props.variant !== 'thumb' &&
+      partials.map(({ d, order }) => (
+        <path
+          class="soft draw"
+          d={d}
+          pathLength="1"
+          style={`--t: ${250 + order * 420}; opacity: ${0.25 + order * 0.15}`}
+        />
+      ))
+  }
+  <path class="main" d={limit}></path>
+  <line class="axis" x1="0" x2={W} y1={STEM_BASE} y2={STEM_BASE}></line>
+  {
+    stems.map(({ x, h, t }) => (
+      <g class="accent grow" style={`--t: ${t}`}>
+        <line x1={x} x2={x} y1={STEM_BASE} y2={STEM_BASE - h} stroke-width="1.5" />
+        <circle cx={x} cy={STEM_BASE - h} r="2.2" />
+      </g>
+    ))
+  }
+</GlyphFrame>

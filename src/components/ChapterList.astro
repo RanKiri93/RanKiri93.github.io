@@ -1,0 +1,134 @@
+---
+import type { OutlineItem } from '../lib/pdfInfo';
+import { chapterTitle } from '../data/courses';
+
+interface Props {
+  outline: OutlineItem[];
+  file: string;
+  readerId: string;
+}
+
+const { outline, file, readerId } = Astro.props;
+const range = ({ page, endPage }: OutlineItem) => (page === endPage ? `עמ' ${page}` : `עמ' ${page}–${endPage}`);
+---
+
+<ol class="chapters">
+  {
+    outline.map((chapter, i) => (
+      <li class="chapter" data-chapter-index={i}>
+        <span class="num" aria-hidden="true">
+          {i + 1}
+        </span>
+        <div class="body">
+          <a class="title" href={`${file}#page=${chapter.page}`} data-reader-open={readerId} data-page={chapter.page}>
+            {chapterTitle(chapter.title, i)}
+          </a>
+          <span class="range">{range(chapter)}</span>
+          {chapter.items.length > 0 && (
+            <details>
+              <summary>{chapter.items.length === 1 ? 'נושא אחד' : `${chapter.items.length} נושאים`}</summary>
+              <ul>
+                {chapter.items.map((item) => (
+                  <li>
+                    <a href={`${file}#page=${item.page}`} data-reader-open={readerId} data-page={item.page}>
+                      {item.title}
+                    </a>
+                    <span class="range">{range(item)}</span>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
+        </div>
+      </li>
+    ))
+  }
+</ol>
+
+<style>
+  .chapters {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .chapter {
+    display: grid;
+    grid-template-columns: 2.5rem 1fr;
+    align-items: baseline;
+    padding-block: var(--space-3);
+    border-block-start: 1px solid var(--color-rule);
+  }
+
+  .num {
+    font-size: var(--step-2);
+    font-weight: 600;
+    color: var(--color-primary);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+
+  .body {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: var(--space-1) var(--space-3);
+    align-items: baseline;
+  }
+
+  .title {
+    font-size: var(--step-1);
+    font-weight: 600;
+    color: var(--color-text);
+    text-decoration: none;
+  }
+
+  .title:hover {
+    color: var(--color-primary);
+    text-decoration: underline;
+  }
+
+  .range {
+    color: var(--color-text-muted);
+    font-size: var(--step--1);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  details {
+    grid-column: 1 / -1;
+  }
+
+  summary {
+    width: fit-content;
+    color: var(--color-text-muted);
+    font-size: var(--step--1);
+    cursor: pointer;
+  }
+
+  summary:hover {
+    color: var(--color-primary);
+  }
+
+  ul {
+    margin: var(--space-2) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  ul li {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding-block: var(--space-1);
+  }
+
+  ul a {
+    color: var(--color-text);
+    text-decoration: none;
+  }
+
+  ul a:hover {
+    color: var(--color-primary);
+    text-decoration: underline;
+  }
+</style>
