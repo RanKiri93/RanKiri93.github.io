@@ -1,0 +1,38 @@
+name: Build and deploy the site
+
+# Pushes to main build the Astro site and publish it to the gh-pages branch,
+# which GitHub Pages serves. Pushes to astro-rework only build, to check the
+# build works before merging.
+on:
+  push:
+    branches:
+      - main
+      - astro-rework
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Deploy to GitHub Pages
+        if: github.ref == 'refs/heads/main'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
