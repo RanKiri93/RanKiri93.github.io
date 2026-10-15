@@ -45,9 +45,10 @@ Tick them off here as they're done.
 - [x] Switch the GitHub Actions deploy from Hugo to Astro
       (`.github/workflows/deploy.yaml`; builds on `astro-rework`, deploys only
       from `main` to the `gh-pages` branch).
-- [ ] Commit everything on `astro-rework` (much of the work is still
-      uncommitted) and push it; the Actions tab should show a green build.
-- [ ] Remove the old Hugo files (`content/`, `layouts/`, `themes/` + the
-      `.gitmodules` entry, `static/`, `archetypes/`, `assets/`, `data/`,
-      `i18n/`, `hugo.toml`), then merge `astro-rework` into `main`.
+- [x] Commit everything on `astro-rework`.
+- [x] Remove the old Hugo files (`content/`, `layouts/`, `themes/` + the
+      `.gitmodules` entry, `static/`, `archetypes/`, `i18n/`, `hugo.toml`).
+- [ ] **Push** `astro-rework` (Actions should show a green build, deploy
+      skipped), then push `main`, which is already merged locally and is what
+      deploys.
 - [ ] After the merge: check the Actions run, then the live site.

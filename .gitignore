@@ -10,10 +10,6 @@ npm-debug.log*
 .env
 .env.*
 
-# Hugo (legacy, removed once migration is complete)
-.hugo_build.lock
-resources/
-
 # OS / editor
 .DS_Store
 Thumbs.db
