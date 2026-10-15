@@ -5,6 +5,7 @@
 import { readFile, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { getDocument, type PDFDocumentProxy } from 'pdfjs-dist/legacy/build/pdf.mjs';
+import { bookmarkFixes } from '../data/courses';
 
 export interface OutlineItem {
   title: string;
@@ -49,14 +50,19 @@ async function load(publicPath: string): Promise<PdfInfo> {
   try {
     const [first, raw] = await Promise.all([doc.getPage(1), doc.getOutline()]);
     const { width, height } = first.getViewport({ scale: 1 });
-    const outline = await resolveOutline(doc, raw ?? [], doc.numPages);
+    const outline = await resolveOutline(doc, raw ?? [], doc.numPages, bookmarkFixes[publicPath] ?? {});
     return { pages: doc.numPages, aspect: height / width, bytes: size, outline };
   } finally {
     await task.destroy();
   }
 }
 
-async function resolveOutline(doc: PDFDocumentProxy, raw: RawOutline, lastPage: number): Promise<OutlineItem[]> {
+async function resolveOutline(
+  doc: PDFDocumentProxy,
+  raw: RawOutline,
+  lastPage: number,
+  fixes: Record<string, string>,
+): Promise<OutlineItem[]> {
   const starts = await Promise.all(raw.map((item) => pageOf(doc, item.dest)));
   const items: OutlineItem[] = [];
   for (let i = 0; i < raw.length; i++) {
@@ -64,11 +70,12 @@ async function resolveOutline(doc: PDFDocumentProxy, raw: RawOutline, lastPage: 
     if (page === null) continue;
     const next = starts.slice(i + 1).find((p): p is number => p !== null);
     const endPage = Math.max(page, next !== undefined ? next - 1 : lastPage);
+    const title = raw[i].title.trim();
     items.push({
-      title: raw[i].title.trim(),
+      title: fixes[title] ?? title,
       page,
       endPage,
-      items: await resolveOutline(doc, raw[i].items ?? [], endPage),
+      items: await resolveOutline(doc, raw[i].items ?? [], endPage, fixes),
     });
   }
   return items;

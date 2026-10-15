@@ -121,8 +121,4 @@ export const awards: { title: Localized; detail: Localized; url?: string; shape?
 ];
 
 /** Courses I taught that don't have a page with materials (yet). */
-export const otherCoursesTaught: { title: Localized; role: 'lecturer' | 'ta' }[] = [
-  { title: { he: 'מבוא לאנליזה פונקציונלית', en: 'Introduction to Functional Analysis' }, role: 'ta' },
-  { title: { he: 'אנליזה ממשית', en: 'Real Analysis' }, role: 'ta' },
-  { title: { he: 'פונקציות מרוכבות והתמרות אינטגרליות', en: 'Complex Functions and Integral Transforms' }, role: 'ta' },
-];
+export const otherCoursesTaught: { title: Localized; role: 'lecturer' | 'ta' }[] = [];

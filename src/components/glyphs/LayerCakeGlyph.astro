@@ -1,0 +1,80 @@
+---
+/**
+ * 104165, real functions: the Lebesgue integral slices the range, not the
+ * domain. Each layer covers the set where f is above its level, so the area is
+ * ∫ μ{f > t} dt; the layers get thinner (4, 8, then 16 levels). The amber
+ * segments are the superlevel set {f > c} for one level c: a union of
+ * intervals, measured all at once. Compare the Darboux picture of 104281.
+ */
+import GlyphFrame, { type GlyphProps } from './GlyphFrame.astro';
+import { r, rangeFrame, toPath, type Pt } from './geom';
+
+type Props = GlyphProps;
+
+const A = 0;
+const B = 2;
+const TOP = 1;
+const frame = rangeFrame(A, B, -0.08, 1.12, 8);
+const f = (x: number) => 0.5 + 0.28 * Math.sin(5.2 * x + 0.3) + 0.16 * Math.sin(11 * x + 1.1);
+
+const N = 400;
+const xs = Array.from({ length: N + 1 }, (_, i) => A + (i / N) * (B - A));
+const curve: Pt[] = xs.map((x) => [frame.x(x), frame.y(f(x))]);
+
+/** The intervals where f > t, from the sampled curve. */
+function above(t: number): [number, number][] {
+  const runs: [number, number][] = [];
+  let start: number | null = null;
+  xs.forEach((x, i) => {
+    const inside = f(x) > t;
+    if (inside && start === null) start = x;
+    if (!inside && start !== null) {
+      runs.push([start, xs[i - 1]]);
+      start = null;
+    }
+  });
+  if (start !== null) runs.push([start, B]);
+  return runs;
+}
+
+function layers(levels: number) {
+  const h = TOP / levels;
+  return Array.from({ length: levels }, (_, k) =>
+    above((k + 1) * h).map(([x0, x1]) => ({
+      x: r(frame.x(x0)),
+      width: r(frame.x(x1) - frame.x(x0)),
+      y: r(frame.y((k + 1) * h)),
+      height: r(frame.y(k * h) - frame.y((k + 1) * h)),
+    })),
+  ).flat();
+}
+
+const stages = [
+  { levels: 4, t: 150, interim: true },
+  { levels: 8, t: 850, interim: true },
+  { levels: 16, t: 1550, interim: false },
+].map((stage) => ({ ...stage, cells: layers(stage.levels) }));
+
+const C = 0.7;
+const level = toPath([[frame.x(A), frame.y(C)], [frame.x(B), frame.y(C)]]);
+const preimage = above(C).map(([x0, x1]) => toPath([[frame.x(x0), frame.y(0)], [frame.x(x1), frame.y(0)]]));
+---
+
+<GlyphFrame {...Astro.props} label="אינטגרל לבג: חלוקה של הטווח לשכבות אופקיות, כל שכבה מעל הקבוצה שבה f גדולה מהרמה">
+  <line class="axis" x1={frame.x(A)} x2={frame.x(B)} y1={frame.y(0)} y2={frame.y(0)}></line>
+  {
+    stages.map(({ cells, t, interim }) => (
+      <g class={interim ? 'interim' : 'fade'} style={`--t: ${t}; --dur: ${interim ? 800 : 500}ms`}>
+        {cells.map(({ x, y, width, height }) => (
+          <>
+            <rect class="tint" x={x} y={y} width={width} height={height} style="opacity: 0.2" />
+            <path class="soft" d={`M${x} ${y}h${width}`} style="opacity: 0.5" />
+          </>
+        ))}
+      </g>
+    ))
+  }
+  <path class="main" d={toPath(curve)}></path>
+  <path class="accent-line fade" d={level} stroke-dasharray="3 4" style="--t: 2000; opacity: 0.7"></path>
+  {preimage.map((d) => <path class="accent-line draw" d={d} pathLength="1" style="--t: 2150; --dur: 450ms; stroke-width: 3" />)}
+</GlyphFrame>

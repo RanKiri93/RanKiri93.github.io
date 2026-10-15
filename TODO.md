@@ -35,6 +35,11 @@ Tick them off here as they're done.
       `public/research/*-slides.pdf`, linked from the Research page and the CV.
 - [x] Copenhagen 2022 removed from the talks (attended only; the CV lists it
       under "Conferences attended").
+- [x] Recitation notes for 104165 (פונקציות ממשיות), 104221 and 104273, with
+      new course pictures. English name of 104165 kept as "Real Analysis".
+- [ ] The three new PDFs have the metadata title "Title Here" (shown in the
+      browser tab when the PDF is opened directly); set `pdftitle` in their
+      .tex sources next time you compile them.
 - [x] Slides shrunk to one page per frame (17/17/25 pages), bookmarks kept.
       For a new talk: `node tools/slides-handout.mjs talk.pdf
       public/research/<name>-slides.pdf "Title"`, then add `slides:` in
@@ -42,8 +47,8 @@ Tick them off here as they're done.
 
 ## Nice to have
 
-- [ ] Fix bookmark titles that lost their math in the PDFs (e.g. "תכונות של התמרת
-      פוריה ב-cG" in 104214), via small per-title overrides.
+- [x] Bookmark titles that lost their math (104214, 104215, 104165) are fixed
+      via `bookmarkFixes` in `src/data/courses.ts`; add new ones there.
 - [ ] Reader: clickable links inside PDFs, and text selection/search.
 
 ## Still to build

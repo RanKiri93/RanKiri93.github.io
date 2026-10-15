@@ -1,0 +1,53 @@
+---
+/**
+ * 104273, introduction to functional analysis and Fourier analysis: the
+ * orthogonal projection. A vector x and a closed subspace M (the plane, with an
+ * orthonormal basis e₁, e₂); the best approximation to x from M is its
+ * projection Px (amber), and the error x − Px is orthogonal to M. With e₁, e₂,
+ * … a Fourier basis, Px is a partial sum of the Fourier series.
+ */
+import GlyphFrame, { type GlyphProps } from './GlyphFrame.astro';
+import { r, toPath, type Pt } from './geom';
+
+type Props = GlyphProps;
+
+type Vec = readonly [number, number, number];
+
+/** An oblique view: M is the horizontal plane z = 0, z points up. */
+const at = ([x, y, z]: Vec): Pt => [r(62 + 58 * x + 40 * y), r(100 + 16 * x - 20 * y - 58 * z)];
+
+const plane = toPath([at([-0.35, -0.55, 0]), at([1.9, -0.55, 0]), at([1.9, 1.45, 0]), at([-0.35, 1.45, 0])]) + 'Z';
+const O = at([0, 0, 0]);
+const x: Vec = [1.25, 0.75, 1.3];
+const px: Vec = [x[0], x[1], 0];
+const [X, PX] = [at(x), at(px)];
+const basis = [at([1, 0, 0]), at([0, 1, 0])];
+
+// The right angle at Px, between the error (up) and the direction back to the origin.
+const back = Math.hypot(px[0], px[1]);
+const s = 0.16;
+const corner = toPath([
+  at([px[0] - (s * px[0]) / back, px[1] - (s * px[1]) / back, 0]),
+  at([px[0] - (s * px[0]) / back, px[1] - (s * px[1]) / back, s * 1.1]),
+  at([px[0], px[1], s * 1.1]),
+]);
+---
+
+<GlyphFrame {...Astro.props} label="הטלה אורתוגונלית: הקירוב הטוב ביותר לווקטור מתוך תת-מרחב הוא ההטלה שלו, והשגיאה ניצבת לתת-המרחב">
+  <path class="tint fade" d={plane} style="--t: 0"></path>
+  <path class="soft draw" d={plane} pathLength="1" style="--t: 0; --dur: 700ms; opacity: 0.3"></path>
+  {
+    basis.map((tip, i) => (
+      <>
+        <path class="soft draw" d={toPath([O, tip])} pathLength="1" style={`--t: ${400 + i * 120}; --dur: 400ms`} />
+        <circle class="dot pop" cx={tip[0]} cy={tip[1]} r="2" style={`--t: ${750 + i * 120}`} />
+      </>
+    ))
+  }
+  <path class="main draw" d={toPath([O, X])} pathLength="1" style="--t: 900; --dur: 500ms"></path>
+  <circle class="dot pop" cx={X[0]} cy={X[1]} r="2.8" style="--t: 1350; opacity: 1"></circle>
+  <path class="ink draw" d={toPath([X, PX])} pathLength="1" stroke-dasharray="3 3" style="--t: 1500; --dur: 450ms; opacity: 0.6"></path>
+  <path class="ink fade" d={corner} style="--t: 1900; stroke-width: 1; opacity: 0.6"></path>
+  <path class="accent-line draw" d={toPath([O, PX])} pathLength="1" style="--t: 1950; --dur: 450ms; stroke-width: 2"></path>
+  <circle class="accent pop" cx={PX[0]} cy={PX[1]} r="2.8" style="--t: 2350"></circle>
+</GlyphFrame>

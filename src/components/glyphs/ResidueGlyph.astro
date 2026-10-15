@@ -1,0 +1,52 @@
+---
+/**
+ * 104221, complex functions and integral transforms: the residue theorem. The
+ * closed half-disk contour (a segment of the real axis and an arc) encloses two
+ * poles (amber), and the integral is 2πi times the sum of their residues; the
+ * small circles around them are the contours it deforms into. The pole below
+ * the axis is outside and contributes nothing. This is how the course computes
+ * real integrals and inverts Fourier transforms.
+ */
+import GlyphFrame, { type GlyphProps } from './GlyphFrame.astro';
+import { W, equalFrame, r, toPath, type Pt } from './geom';
+
+type Props = GlyphProps;
+
+const U = 34;
+const frame = equalFrame(U, 0, 0.95);
+const R = 2.1;
+
+const arc: Pt[] = Array.from({ length: 97 }, (_, i) => {
+  const t = (i / 96) * Math.PI;
+  return [frame.x(R * Math.cos(t)), frame.y(R * Math.sin(t))];
+});
+// Counter-clockwise: along the axis from −R to R, then back over the arc.
+const contour = `${toPath([[frame.x(-R), frame.y(0)], [frame.x(R), frame.y(0)]])}${toPath(arc).replace(/^M/, 'L')}`;
+
+const inside: Pt[] = [
+  [0.75, 0.75],
+  [-0.85, 1.25],
+];
+const outside: Pt = [0.35, -0.8];
+
+// A chevron on top of the arc, pointing the way the contour runs (leftwards there).
+const [tx, ty] = [frame.x(0), frame.y(R)];
+const chevron = `M${r(tx + 4)} ${r(ty - 4)}L${r(tx - 1)} ${r(ty)}L${r(tx + 4)} ${r(ty + 4)}`;
+---
+
+<GlyphFrame {...Astro.props} label="משפט השארית: מסילה סגורה בחצי המישור העליון מקיפה שני קטבים, והאינטגרל הוא סכום השאריות שלהם">
+  <line class="axis" x1="0" x2={W} y1={frame.y(0)} y2={frame.y(0)}></line>
+  <line class="axis" x1={frame.x(0)} x2={frame.x(0)} y1="0" y2="150"></line>
+  <path class="tint fade" d={`${contour}Z`} style="--t: 900"></path>
+  <path class="main draw" d={contour} pathLength="1" style="--t: 100; --dur: 1100ms"></path>
+  <path class="main fade" d={chevron} style="--t: 1100"></path>
+  {
+    inside.map(([x, y], i) => (
+      <>
+        <circle class="soft draw" cx={frame.x(x)} cy={frame.y(y)} r="9" pathLength="1" stroke-dasharray="2 3" style={`--t: ${1500 + i * 150}; --dur: 500ms`} />
+        <circle class="accent pop" cx={frame.x(x)} cy={frame.y(y)} r="3" style={`--t: ${1300 + i * 150}`} />
+      </>
+    ))
+  }
+  <circle class="dot pop" cx={frame.x(outside[0])} cy={frame.y(outside[1])} r="2.6" style="--t: 1600"></circle>
+</GlyphFrame>
