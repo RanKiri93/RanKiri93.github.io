@@ -1,17 +1,17 @@
 # Site rework: open items
 
-Things waiting on Ran before the new site (branch `astro-rework`) goes live.
+Open items for the new site (live since 2026-10-15; deploys from `main`).
 Tick them off here as they're done.
 
-## Before going live
+## To review
 
 - [x] Replace `public/CV.pdf` with a cleaned version: now built from `cv/cv.tex`
       (no ID number or date of birth; awards, paper year, IWOTA 2025 updated).
 - [ ] **Proofread the new CV** (`cv/cv.tex` → `public/CV.pdf`). Check: the reserve-duty days (199, as of Jan 2025); the research-interests line;
       whether to keep the GPAs. Rebuild with `latexmk -pdf cv.tex` and copy
       `cv.pdf` to `public/CV.pdf`.
-- [ ] The old CV with the ID number is still in git history (and on the live
-      site until the merge). Decide whether to scrub it from history.
+- [ ] The old CV with the ID number is still in git history (the live site
+      serves the clean one). Decide whether to scrub it from history.
 - [ ] Review the research texts (math and wording), both languages:
       `src/content/pages/he/research.md` and `src/content/pages/en/research.md`.
 - [ ] Review the English About bio and award names: `src/content/pages/en/about.md`,
@@ -21,6 +21,8 @@ Tick them off here as they're done.
 
 - [x] MSc thesis PDF → `public/research/msc-thesis.pdf` (Research page and CV).
 - [x] PhD start: November 2022.
+- [x] Semesters of the Szego prizes: twelve, from the ugportal lists → three
+      bands in `timeline.awardSpans`.
 - [x] Grader: three semesters from Spring 2018, overlapping the first year as TA.
 - [x] Profile links: Google Scholar and ORCID (About page and CV).
 - [ ] Review the wording of "How I teach" (lightly edited from your text,
