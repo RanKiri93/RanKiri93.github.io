@@ -6,10 +6,32 @@ export const email = 'rankiri@campus.technion.ac.il';
 export const cvUrl = '/CV.pdf';
 
 /** Academic profiles shown next to the email (e.g. Google Scholar, ORCID). Empty: hidden. */
-export const profiles: { label: string; url: string }[] = [];
+export const profiles: { label: string; url: string }[] = [
+  { label: 'Google Scholar', url: 'https://scholar.google.com/citations?user=Ws0L2ocAAAAJ' },
+  { label: 'ORCID', url: 'https://orcid.org/0000-0002-7631-0713' },
+];
 
-/** "How I teach", in Ran's own words. null: the section is hidden. */
-export const teachingApproach: Localized | null = null;
+/** "How I teach", in Ran's own words; paragraphs separated by blank lines. null: the section is hidden. */
+export const teachingApproach: Localized | null = {
+  he: `תמיד ראיתי במתמטיקה מקור לסדר וליופי רב.
+
+בהוראה חשוב לי קודם כול לשכנע את הסטודנטים והסטודנטיות שאני מאמין גדול בתהליך הלמידה עצמו. טעויות, סיעור מוחות והתמודדות עם האינטואיציה (גם שלי!) הם חלק בלתי נפרד מהלמידה, ואני שם עליהם דגש בהרצאות, בתרגולים ובשיעורי הבית.
+
+עבודה עצמאית הכרחית כדי להטמיע את החומר, גם כשהמתמטיקה מאתגרת ולפעמים אף מלחיצה. כאן התפקיד שלי הוא להיות זמין. אני מאמין שנוכחות זמינה ומסבירת פנים של המרצה משרה ביטחון בכיתה כולה, רק מעצם היותה שם, וכך מחזקת את תחושת המסוגלות גם בעבודה העצמאית.
+
+לבסוף, המתמטיקה איננה רק כלי מופשט. היא נמצאת בכל עולמות המדע והטכנולוגיה, ואפילו בחיי היום-יום (לפעמים במקומות מפתיעים). היכן שאפשר, אני מקפיד להראות שימושים של המתמטיקה בעולם האמיתי, כדי לתת תשובה נוספת לשאלה "למה?".
+
+אני מאמין שהשילוב של כל אלה הופך את הלמידה לחוויה מאתגרת, מגרה אינטלקטואלית ואפילו מהנה.`,
+  en: `I have always seen mathematics as a source of order and great beauty.
+
+When I teach, the first thing I want my students to know is that I truly believe in the learning process itself. Mistakes, brainstorming and wrestling with intuition (mine included!) are an inseparable part of learning, and I give them a central place in lectures, recitations and homework.
+
+Independent work is essential for really taking in the material, even when mathematics is challenging and sometimes stressful. Here my part is to be available. I believe that an approachable, available lecturer gives the whole class confidence just by being there, and so builds a sense of capability for the independent work too.
+
+Finally, mathematics is not only an abstract tool. It runs through all of science and technology, and even everyday life (sometimes in surprising places). Wherever I can, I show how mathematics is used in the real world, to give one more answer to the question "why?".
+
+I believe that together, all of this makes learning challenging, intellectually stimulating, and even fun.`,
+};
 
 /**
  * Career timeline. Dates are fractional years: Technion's winter semester is
@@ -37,17 +59,16 @@ export const timeline: {
   studies: [
     { label: { he: 'תואר ראשון', en: 'BSc' }, from: 2016.8, to: 2020.55 },
     { label: { he: 'תואר שני', en: 'MSc' }, from: 2020.8, to: 2022.6 },
-    // Start assumed to follow the MSc; to be confirmed.
-    { label: { he: 'דוקטורט', en: 'PhD' }, from: 2022.8, to: null },
+    { label: { he: 'דוקטורט', en: 'PhD' }, from: 2022.85, to: null },
   ],
   // Each inner list is one track; tracks may overlap in time.
   teaching: [
+    [{ label: { he: 'מתרגל', en: 'Teaching assistant' }, from: 2018.8, to: null }],
     [
-      // Grader dates assumed (the year before TA); to be confirmed.
-      { label: { he: 'בודק תרגילים', en: 'Grader' }, from: 2017.8, to: 2018.55 },
-      { label: { he: 'מתרגל', en: 'Teaching assistant' }, from: 2018.8, to: null },
+      // Grader for three semesters from 2018, overlapping the first year as TA.
+      { label: { he: 'בודק תרגילים', en: 'Grader' }, from: 2018.2, to: 2019.55 },
+      { label: { he: 'מרצה', en: 'Lecturer' }, from: 2023.2, to: null },
     ],
-    [{ label: { he: 'מרצה', en: 'Lecturer' }, from: 2023.2, to: null }],
   ],
   // Szego prizes: three runs of four consecutive semesters each (ugportal lists).
   awardSpans: [

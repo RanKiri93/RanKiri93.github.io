@@ -5,4 +5,5 @@ authors: ['Ran Kiri']
 institution: 'Technion – Israel Institute of Technology'
 advisor: 'Orr Moshe Shalit'
 year: 2022
+file: '/research/msc-thesis.pdf'
 ---

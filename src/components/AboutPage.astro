@@ -81,7 +81,9 @@ const taught = (['lecturer', 'ta'] as const).map((role) => ({
     teachingApproach && (
       <section aria-labelledby="how-heading">
         <h2 id="how-heading">{t('about.how')}</h2>
-        <p>{teachingApproach[lang]}</p>
+        {teachingApproach[lang].split(/\n\s*\n/).map((paragraph) => (
+          <p>{paragraph}</p>
+        ))}
       </section>
     )
   }
