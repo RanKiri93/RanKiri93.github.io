@@ -28,6 +28,11 @@ export default defineConfig({
       rehypePlugins: [rehypeKatex],
     }),
   },
+  vite: {
+    // The PDF reader imports PDF.js lazily. Pre-bundle it at dev-server start,
+    // or Vite finds it on the first open, re-optimizes, and that import 504s.
+    optimizeDeps: { include: ['pdfjs-dist'] },
+  },
   integrations: [
     mdx(),
     sitemap({

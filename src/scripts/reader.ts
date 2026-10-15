@@ -17,6 +17,11 @@ function loadPdfjs(): Promise<Pdfjs> {
       pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
       return pdfjs;
     },
+    (error) => {
+      // Forget the failure (e.g. a dropped connection), so the next open tries again.
+      pdfjsPromise = undefined;
+      throw error;
+    },
   );
   return pdfjsPromise;
 }
@@ -41,6 +46,15 @@ export const storage = {
   },
 };
 
+interface Strings {
+  loading: string;
+  error: string;
+  errorLink: string;
+  pageLabel: string;
+  start: string;
+  continue: string;
+}
+
 interface Chapter {
   start: number;
   end: number;
@@ -61,6 +75,7 @@ class Reader {
   readonly storageKey: string;
   private readonly chapters: Chapter[];
   private readonly courseTitle: string;
+  readonly strings: Strings;
 
   private doc: PDFDocumentProxy | null = null;
   private loading: Promise<void> | null = null;
@@ -85,6 +100,7 @@ class Reader {
     this.src = dialog.dataset.src!;
     this.total = Number(dialog.dataset.pages);
     this.storageKey = dialog.dataset.storageKey!;
+    this.strings = JSON.parse(dialog.dataset.strings!);
 
     this.chapters = [...dialog.querySelectorAll<HTMLAnchorElement>('a[data-end]')].map((link) => ({
       start: Number(link.dataset.goto),
@@ -135,7 +151,12 @@ class Reader {
     this.setCurrent(page);
 
     this.loading ??= this.load();
-    this.loading.then(() => this.goTo(page)).catch(() => this.showError());
+    this.loading
+      .then(() => this.goTo(page))
+      .catch((error) => {
+        console.error(error);
+        this.showError();
+      });
   }
 
   close() {
@@ -168,11 +189,11 @@ class Reader {
   }
 
   private async load() {
-    this.status.textContent = 'טוען את הקובץ…';
+    this.status.textContent = this.strings.loading;
     const pdfjs = await loadPdfjs();
     const task = pdfjs.getDocument({ url: this.src });
     task.onProgress = ({ loaded, total }: { loaded: number; total: number }) => {
-      if (total) this.status.textContent = `טוען את הקובץ… ${Math.round((loaded / total) * 100)}%`;
+      if (total) this.status.textContent = `${this.strings.loading} ${Math.round((loaded / total) * 100)}%`;
     };
     this.doc = await task.promise;
     this.status.textContent = '';
@@ -181,10 +202,10 @@ class Reader {
 
   private showError() {
     this.loading = null;
-    this.status.textContent = 'לא הצלחנו לטעון את הקובץ. אפשר ';
+    this.status.textContent = `${this.strings.error} `;
     const link = document.createElement('a');
     link.href = this.src;
-    link.textContent = 'לפתוח אותו ישירות';
+    link.textContent = this.strings.errorLink;
     this.status.append(link, '.');
   }
 
@@ -195,7 +216,7 @@ class Reader {
       sheet.className = 'sheet';
       sheet.dataset.page = String(i + 1);
       sheet.setAttribute('role', 'img');
-      sheet.setAttribute('aria-label', `עמוד ${i + 1}`);
+      sheet.setAttribute('aria-label', this.strings.pageLabel.replace('{n}', String(i + 1)));
       fragment.append(sheet);
       return sheet;
     });
@@ -317,7 +338,8 @@ function syncProgress(reader: Reader) {
   const id = reader.dialog.id;
   for (const button of document.querySelectorAll<HTMLElement>(`[data-reader-open="${id}"][data-page="continue"]`)) {
     const label = button.querySelector('[data-label]') ?? button;
-    label.textContent = page && page > 1 ? `המשך מעמוד ${page}` : 'התחלת קריאה';
+    label.textContent =
+      page && page > 1 ? reader.strings.continue.replace('{n}', String(page)) : reader.strings.start;
   }
   const map = document.querySelector<HTMLElement>(`[data-map-for="${id}"]`);
   const mark = map?.querySelector<HTMLElement>('[data-progress]');
@@ -374,6 +396,6 @@ export function initReaders() {
 
   // Links like /courses/104214/#page=80 open the reader at that page.
   const match = /^#page=(\d+)$/.exec(location.hash);
-  const first = readers.values().next().value;
-  if (match && first) first.open(Number(match[1]), null);
+  const linked = [...readers.values()].find((reader) => reader.dialog.hasAttribute('data-deep-link'));
+  if (match && linked) linked.open(Number(match[1]), null);
 }

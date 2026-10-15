@@ -19,3 +19,7 @@ resources/
 Thumbs.db
 .vscode/*
 !.vscode/extensions.json
+
+# LaTeX build files for the CV (cv/cv.tex)
+cv/*
+!cv/cv.tex

@@ -1,0 +1,293 @@
+---
+/**
+ * The Hofstadter butterfly: the spectrum of U + U* + V + V* for VU = e^{2πiθ}UV,
+ * drawn at every rational θ = p/q with q ≤ MAX_Q. The slider picks θ = p/q,
+ * lights up that row and explains why the algebra is q-subhomogeneous.
+ */
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
+import { fractions, harperBands, type Fraction } from '../lib/harper';
+import { getLangFromUrl, useTranslations } from '../i18n/ui';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const MAX_Q = 24;
+const SLIDER_MAX_Q = 12;
+const SIZE = 400;
+const PAD = 12;
+
+const x = (energy: number) => PAD + ((energy + 4) / 8) * (SIZE - 2 * PAD);
+const y = (theta: number) => SIZE - PAD - theta * (SIZE - 2 * PAD);
+const r1 = (n: number) => Math.round(n * 10) / 10;
+
+function bandsPath(fraction: Fraction): string {
+  const row = r1(y(fraction.p / fraction.q));
+  return harperBands(fraction)
+    .map(([lo, hi]) => `M${r1(x(lo))} ${row}h${Math.max(0.6, r1(x(hi) - x(lo)))}`)
+    .join('');
+}
+
+const butterfly = fractions(MAX_Q).map(bandsPath).join('');
+const choices = fractions(SLIDER_MAX_Q);
+const initialIndex = choices.findIndex(({ p, q }) => p === 2 && q === 5);
+const initial = choices[initialIndex];
+
+const tex = (source: string) => katex.renderToString(source, { throwOnError: false });
+const relation = tex('VU = e^{2\\pi i\\theta}\\,UV');
+const operator = tex('U + U^* + V + V^*');
+const step = tex(String.raw`e^{-2\pi i\theta}`);
+---
+
+<figure
+  class="butterfly"
+  data-butterfly
+  data-choices={JSON.stringify(choices)}
+  data-statement={t('butterfly.statement')}
+  data-statement-one={t('butterfly.statementOne')}
+>
+  <div class="plot">
+    <svg viewBox={`0 0 ${SIZE} ${SIZE}`} role="img" aria-label={t('butterfly.label')} data-plot>
+      <line class="frame" x1={x(0)} x2={x(0)} y1={y(0)} y2={y(1)}></line>
+      <path class="bands" d={butterfly}></path>
+      <line class="cursor" x1={PAD} x2={SIZE - PAD} y1={y(initial.p / initial.q)} y2={y(initial.p / initial.q)} data-cursor
+      ></line>
+      <path class="selected" d={bandsPath(initial)} data-selected></path>
+      <text class="tick" x={x(-4)} y={SIZE} text-anchor="start">−4</text>
+      <text class="tick" x={x(0)} y={SIZE} text-anchor="middle">0</text>
+      <text class="tick" x={x(4)} y={SIZE} text-anchor="end">4</text>
+    </svg>
+  </div>
+
+  <div class="panel">
+    <label class="theta">
+      <span class="theta-label">θ = <output data-theta>{initial.p}/{initial.q}</output></span>
+      <input
+        type="range"
+        min="0"
+        max={choices.length - 1}
+        step="1"
+        value={initialIndex}
+        aria-valuetext={`θ = ${initial.p}/${initial.q}`}
+        data-slider
+      />
+    </label>
+
+    <p class="statement" data-statement-text>
+      {t('butterfly.statement').replaceAll('{p}', String(initial.p)).replaceAll('{q}', String(initial.q))}
+    </p>
+
+    <svg class="clock" viewBox="-1.35 -1.35 2.7 2.7" aria-hidden="true" data-clock>
+      <circle class="unit" r="1"></circle>
+      <path class="star" data-star></path>
+      <g data-dots></g>
+    </svg>
+
+    <figcaption>
+      <p>
+        <Fragment set:html={t('butterfly.caption').replace('{relation}', relation).replace('{operator}', operator)} />
+      </p>
+      <p class="muted"><Fragment set:html={t('butterfly.clockCaption').replace('{step}', step)} /></p>
+    </figcaption>
+  </div>
+</figure>
+
+<script>
+  import { harperBands, type Fraction } from '../lib/harper';
+
+  const SIZE = 400;
+  const PAD = 12;
+  const x = (energy: number) => PAD + ((energy + 4) / 8) * (SIZE - 2 * PAD);
+  const y = (theta: number) => SIZE - PAD - theta * (SIZE - 2 * PAD);
+  const SVG = 'http://www.w3.org/2000/svg';
+
+  for (const figure of document.querySelectorAll<HTMLElement>('[data-butterfly]')) {
+    const choices: Fraction[] = JSON.parse(figure.dataset.choices!);
+    const slider = figure.querySelector<HTMLInputElement>('[data-slider]')!;
+    const output = figure.querySelector<HTMLOutputElement>('[data-theta]')!;
+    const statement = figure.querySelector<HTMLElement>('[data-statement-text]')!;
+    const cursor = figure.querySelector<SVGLineElement>('[data-cursor]')!;
+    const selected = figure.querySelector<SVGPathElement>('[data-selected]')!;
+    const star = figure.querySelector<SVGPathElement>('[data-star]')!;
+    const dots = figure.querySelector<SVGGElement>('[data-dots]')!;
+    const plot = figure.querySelector<SVGSVGElement>('[data-plot]')!;
+
+    function show(index: number) {
+      const fraction = choices[index];
+      const { p, q } = fraction;
+      const label = `${p}/${q}`;
+      output.value = label;
+      slider.value = String(index);
+      slider.setAttribute('aria-valuetext', `θ = ${label}`);
+      const template = q === 1 ? figure.dataset.statementOne! : figure.dataset.statement!;
+      statement.textContent = template.replaceAll('{p}', String(p)).replaceAll('{q}', String(q));
+
+      const row = y(p / q);
+      cursor.setAttribute('y1', String(row));
+      cursor.setAttribute('y2', String(row));
+      selected.setAttribute(
+        'd',
+        harperBands(fraction)
+          .map(([lo, hi]) => `M${x(lo)} ${row}h${Math.max(1.2, x(hi) - x(lo))}`)
+          .join(''),
+      );
+
+      // Eigenvalues of the clock matrix U: e^{2πi·pj/q}. V multiplies them by e^{−2πiθ},
+      // stepping from each to the previous one; the star polygon traces those steps.
+      const points = Array.from({ length: q }, (_, j) => {
+        const angle = (2 * Math.PI * p * j) / q;
+        return [Math.cos(angle), -Math.sin(angle)] as const;
+      });
+      star.setAttribute('d', q > 1 ? points.map(([a, b], j) => `${j ? 'L' : 'M'}${a} ${b}`).join('') + 'Z' : '');
+      dots.replaceChildren(
+        ...points.map(([a, b]) => {
+          const dot = document.createElementNS(SVG, 'circle');
+          dot.setAttribute('cx', String(a));
+          dot.setAttribute('cy', String(b));
+          dot.setAttribute('r', '0.075');
+          return dot;
+        }),
+      );
+    }
+
+    slider.addEventListener('input', () => show(Number(slider.value)));
+
+    // Pointer on the plot: pick the listed θ nearest to that height.
+    const pick = (event: PointerEvent) => {
+      const box = plot.getBoundingClientRect();
+      const theta = 1 - ((event.clientY - box.top) / box.height - PAD / SIZE) / (1 - (2 * PAD) / SIZE);
+      let best = 0;
+      choices.forEach(({ p, q }, i) => {
+        if (Math.abs(p / q - theta) < Math.abs(choices[best].p / choices[best].q - theta)) best = i;
+      });
+      show(best);
+    };
+    plot.addEventListener('pointerdown', (event) => {
+      plot.setPointerCapture(event.pointerId);
+      pick(event);
+    });
+    plot.addEventListener('pointermove', (event) => {
+      if (plot.hasPointerCapture(event.pointerId)) pick(event);
+    });
+
+    show(Number(slider.value));
+  }
+</script>
+
+<style>
+  .butterfly {
+    display: grid;
+    grid-template-columns: minmax(0, 26rem) minmax(0, 1fr);
+    gap: var(--space-5);
+    align-items: start;
+    margin: var(--space-5) 0;
+  }
+
+  .plot svg {
+    direction: ltr;
+    width: 100%;
+    height: auto;
+    touch-action: none;
+    cursor: crosshair;
+  }
+
+  .frame {
+    stroke: var(--color-rule);
+    stroke-width: 1;
+  }
+
+  .bands {
+    fill: none;
+    stroke: var(--color-primary);
+    stroke-width: 1.3;
+    opacity: 0.75;
+  }
+
+  .cursor {
+    stroke: var(--color-accent);
+    stroke-width: 1;
+    stroke-dasharray: 2 3;
+    opacity: 0.8;
+  }
+
+  .selected {
+    fill: none;
+    stroke: var(--color-accent);
+    stroke-width: 4;
+    stroke-linecap: round;
+  }
+
+  .tick {
+    fill: var(--color-text-muted);
+    font-size: 12px;
+    font-family: var(--font-sans);
+  }
+
+  .panel {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .theta {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .theta-label {
+    font-size: var(--step-2);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    direction: ltr;
+    text-align: start;
+    unicode-bidi: plaintext;
+  }
+
+  input[type='range'] {
+    width: 100%;
+    accent-color: var(--color-accent);
+    direction: ltr;
+  }
+
+  .statement {
+    margin: 0;
+    font-size: var(--step-1);
+  }
+
+  .clock {
+    width: 9rem;
+    height: 9rem;
+  }
+
+  .unit {
+    fill: none;
+    stroke: var(--color-rule);
+    stroke-width: 0.02;
+  }
+
+  .star {
+    fill: none;
+    stroke: var(--color-primary);
+    stroke-width: 0.025;
+    stroke-linejoin: round;
+    opacity: 0.6;
+  }
+
+  .clock :global(circle:not(.unit)) {
+    fill: var(--color-accent);
+  }
+
+  figcaption p {
+    margin: 0 0 var(--space-2);
+  }
+
+  .muted {
+    color: var(--color-text-muted);
+    font-size: var(--step--1);
+  }
+
+  @media (max-width: 48rem) {
+    .butterfly {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

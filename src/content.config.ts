@@ -8,6 +8,8 @@ const courses = defineCollection({
   schema: z.object({
     code: z.string().regex(/^\d{6}$/),
     title: z.string(),
+    /** English name, used on English pages (the course pages themselves are Hebrew). */
+    titleEn: z.string(),
     /** What I did in the course: gave the lectures or the recitations. */
     role: z.enum(['lecturer', 'ta']),
     materials: z
@@ -22,19 +24,29 @@ const courses = defineCollection({
   }),
 });
 
-/** Papers. The Markdown body, when present, is the abstract. */
+/** Papers and theses. The Markdown body, when present, is the abstract (LaTeX allowed). */
 const publications = defineCollection({
   loader: glob({ pattern: '*.md', base: './src/content/publications' }),
   schema: z.object({
+    kind: z.enum(['article', 'thesis']),
     title: z.string(),
+    /** Title with LaTeX for BibTeX, when it contains symbols such as Λ. */
+    titleTex: z.string().optional(),
     authors: z.array(z.string()).min(1),
-    journal: z.string(),
+    journal: z.string().optional(),
     volume: z.number().optional(),
     article: z.number().optional(),
+    institution: z.string().optional(),
+    advisor: z.string().optional(),
     year: z.number(),
     doi: z.string().optional(),
-    url: z.url(),
+    url: z.url().optional(),
     arxiv: z.string().optional(),
+    /** A PDF in public/, read in the site's reader. */
+    file: z.string().startsWith('/').optional(),
+    related: z
+      .array(z.object({ authors: z.string(), title: z.string(), year: z.number(), url: z.url() }))
+      .default([]),
   }),
 });
 
@@ -51,14 +63,19 @@ const talks = defineCollection({
     event: localized.optional(),
     eventUrl: z.url().optional(),
     place: localized,
+    /** Poster PDF in public/. */
     file: z.string().startsWith('/').optional(),
+    /** Preview image of the poster, in public/. */
+    thumbnail: z.string().startsWith('/').optional(),
+    /** Slides PDF in public/. */
+    slides: z.string().startsWith('/').optional(),
   }),
 });
 
 /** Prose for bilingual pages, e.g. pages/he/about.md and pages/en/about.md. */
 const pages = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/pages' }),
-  schema: z.object({ title: z.string() }),
+  schema: z.object({ title: z.string(), lede: z.string().optional() }),
 });
 
 export const collections = { courses, publications, talks, pages };

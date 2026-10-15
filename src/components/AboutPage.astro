@@ -1,7 +1,10 @@
 ---
-import { getEntry, render } from 'astro:content';
-import { awards, cvUrl, education, email } from '../data/profile';
-import { getLangFromUrl, useTranslations } from '../i18n/ui';
+import { Image } from 'astro:assets';
+import { getCollection, getEntry, render } from 'astro:content';
+import photo from '../assets/profile.png';
+import CareerTimeline from './CareerTimeline.astro';
+import { awards, cvUrl, email, otherCoursesTaught, profiles, teachingApproach } from '../data/profile';
+import { getLangFromUrl, localePath, useTranslations } from '../i18n/ui';
 
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
@@ -9,25 +12,64 @@ const t = useTranslations(lang);
 const page = await getEntry('pages', `${lang}/about`);
 if (!page) throw new Error(`Missing src/content/pages/${lang}/about.md`);
 const { Content } = await render(page);
+
+const hubs = (await getCollection('courses')).sort((a, b) => a.data.code.localeCompare(b.data.code));
+const taught = (['lecturer', 'ta'] as const).map((role) => ({
+  role,
+  heading: t(role === 'lecturer' ? 'about.asLecturer' : 'about.asTa'),
+  courses: [
+    ...hubs
+      .filter(({ data }) => data.role === role)
+      .map(({ id, data }) => ({ title: lang === 'he' ? data.title : data.titleEn, href: localePath('he', `courses/${id}/`) })),
+    ...otherCoursesTaught.filter((c) => c.role === role).map((c) => ({ title: c.title[lang], href: null })),
+  ],
+}));
 ---
 
-<div class="container page">
-  <h1>{page.data.title}</h1>
-  <div class="prose">
-    <Content />
-  </div>
-  <p><a href={cvUrl}>{t('about.cv')}</a></p>
-
-  <section>
-    <h2>{t('about.education')}</h2>
-    <ul class="entries">
+<div class="container page about">
+  <div class="intro">
+    <Image
+      class="portrait"
+      src={photo}
+      alt={t('about.photoAlt')}
+      widths={[320, 480, 640]}
+      sizes="(max-width: 48rem) 70vw, 20rem"
+      loading="eager"
+    />
+    <div class="bio">
+      <h1>{page.data.title}</h1>
+      <div class="prose">
+        <Content />
+      </div>
+      <p class="contact">{t('about.contactText')}</p>
+      <p class="actions">
+        <a class="button primary" href={`mailto:${email}`}>{t('about.writeMe')}</a>
+        <a class="button" href={cvUrl}>{t('about.cv')}</a>
+      </p>
+      <p class="email"><a href={`mailto:${email}`} dir="ltr">{email}</a></p>
       {
-        education.map(({ degree, years, detail }) => (
+        profiles.length > 0 && (
+          <p class="profiles">
+            {profiles.map(({ label, url }) => (
+              <a href={url}>{label}</a>
+            ))}
+          </p>
+        )
+      }
+    </div>
+  </div>
+
+  <section aria-labelledby="glance-heading">
+    <h2 id="glance-heading">{t('about.glance')}</h2>
+    <CareerTimeline />
+    <ul class="awards">
+      {
+        awards.map(({ title, detail, url, shape }) => (
           <li>
-            <span class="title">{degree[lang]}</span>
-            <span class="meta">
-              {years && `${years}. `}
-              {detail?.[lang]}
+            <span class:list={['key', shape ?? 'none']} aria-hidden="true" />
+            <span>
+              {url ? <a href={url}>{title[lang]}</a> : <strong>{title[lang]}</strong>}
+              <span class="meta"> {detail[lang]}</span>
             </span>
           </li>
         ))
@@ -35,22 +77,166 @@ const { Content } = await render(page);
     </ul>
   </section>
 
-  <section>
-    <h2>{t('about.awards')}</h2>
-    <ul class="entries">
+  {
+    teachingApproach && (
+      <section aria-labelledby="how-heading">
+        <h2 id="how-heading">{t('about.how')}</h2>
+        <p>{teachingApproach[lang]}</p>
+      </section>
+    )
+  }
+
+  <section aria-labelledby="taught-heading">
+    <h2 id="taught-heading">{t('about.taught')}</h2>
+    <div class="taught">
       {
-        awards.map(({ title, detail, url }) => (
-          <li>
-            {url ? <a href={url}>{title[lang]}</a> : <span class="title">{title[lang]}</span>}
-            <span class="meta">{detail[lang]}</span>
-          </li>
+        taught.map(({ heading, courses }) => (
+          <div>
+            <h3>{heading}</h3>
+            <ul>
+              {courses.map(({ title, href }) => (
+                <li>{href ? <a href={href} hreflang={lang === 'he' ? undefined : 'he'}>{title}</a> : title}</li>
+              ))}
+            </ul>
+          </div>
         ))
       }
-    </ul>
-  </section>
-
-  <section>
-    <h2>{t('about.contact')}</h2>
-    <p>{t('about.contactText')} <a href={`mailto:${email}`}>{email}</a></p>
+    </div>
   </section>
 </div>
+
+<style>
+  .about section,
+  .about .intro {
+    max-width: 52rem;
+  }
+
+  .intro {
+    display: grid;
+    grid-template-columns: 17rem minmax(0, 1fr);
+    gap: var(--space-5);
+    align-items: start;
+  }
+
+  .portrait {
+    width: 100%;
+    height: auto;
+    border-radius: var(--radius);
+    background: var(--color-surface);
+  }
+
+  .bio h1 {
+    margin-block-start: 0;
+  }
+
+  .prose :global(p) {
+    margin-block: 0 var(--space-3);
+  }
+
+  .contact {
+    margin-block: var(--space-4) var(--space-3);
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin: 0;
+  }
+
+  .email {
+    margin: var(--space-2) 0 0;
+    font-size: var(--step--1);
+    color: var(--color-text-muted);
+  }
+
+  .email a {
+    color: inherit;
+  }
+
+  .profiles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  .awards {
+    display: grid;
+    gap: var(--space-2);
+    margin: var(--space-3) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .awards li {
+    display: grid;
+    grid-template-columns: 1.25rem minmax(0, 1fr);
+    align-items: baseline;
+  }
+
+  /* Legend keys matching the marks on the timeline. */
+  .key {
+    display: inline-block;
+    width: 0.7rem;
+    height: 0.7rem;
+    background: var(--color-accent);
+  }
+
+  .key.band {
+    width: 0.9rem;
+    height: 0.45rem;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--color-accent) 45%, transparent);
+  }
+
+  .key.dot {
+    border-radius: 50%;
+  }
+
+  .key.diamond {
+    width: 0.55rem;
+    height: 0.55rem;
+    rotate: 45deg;
+  }
+
+  .key.none {
+    background: none;
+  }
+
+  .taught {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4);
+  }
+
+  .taught h3 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--step-0);
+    color: var(--color-text-muted);
+  }
+
+  .taught ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .taught li {
+    padding-block: var(--space-1);
+    border-block-end: 1px solid var(--color-rule);
+  }
+
+  @media (max-width: 48rem) {
+    .intro {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .portrait {
+      max-width: 16rem;
+    }
+
+    .taught {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

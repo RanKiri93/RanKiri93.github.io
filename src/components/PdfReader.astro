@@ -1,6 +1,7 @@
 ---
 import type { OutlineItem } from '../lib/pdfInfo';
 import { chapterTitle } from '../data/courses';
+import { getLangFromUrl, useTranslations } from '../i18n/ui';
 
 /**
  * Full-screen reader for a course PDF, rendered with PDF.js (loaded on first
@@ -15,40 +16,57 @@ interface Props {
   pages: number;
   aspect: number;
   outline: OutlineItem[];
+  /** Let /page/#page=N open this reader on load (course pages). */
+  deepLink?: boolean;
 }
 
-const { id, src, title, storageKey, pages, aspect, outline } = Astro.props;
+const { id, src, title, storageKey, pages, aspect, outline, deepLink = false } = Astro.props;
+// A single bookmark (e.g. "References" on a poster) is not worth a chapter panel.
+const hasToc = outline.length > 1;
+const chapters = hasToc ? outline : [];
+
+const t = useTranslations(getLangFromUrl(Astro.url));
+const strings = {
+  loading: t('reader.loading'),
+  error: t('reader.error'),
+  errorLink: t('reader.errorLink'),
+  pageLabel: t('reader.pageLabel'),
+  start: t('reader.start'),
+  continue: t('reader.continue'),
+};
 ---
 
 <dialog
   class="reader"
   id={id}
-  aria-label={`קריאה: ${title}`}
+  aria-label={t('reader.label').replace('{title}', title)}
   data-src={src}
   data-pages={pages}
   data-aspect={aspect}
   data-storage-key={`reader:${storageKey}:page`}
+  data-deep-link={deepLink ? '' : undefined}
+  data-strings={JSON.stringify(strings)}
 >
-  <div class="shell">
+  <div class:list={['shell', { 'no-toc': !hasToc }]}>
     <header class="bar">
-      <button type="button" class="icon" data-close aria-label="סגירת הקורא">
+      <button type="button" class="icon" data-close aria-label={t('reader.close')}>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
       </button>
-      <button type="button" class="toc-toggle" aria-expanded="false" aria-controls={`${id}-toc`}>פרקים</button>
+      <button type="button" class="toc-toggle" aria-expanded="false" aria-controls={`${id}-toc`}>{t('reader.chapters')}</button>
       <p class="where" data-chapter>{title}</p>
       <label class="page-field">
-        <span>עמוד</span>
+        <span>{t('reader.page')}</span>
         <input type="number" inputmode="numeric" min="1" max={pages} value="1" data-page-input />
-        <span>מתוך {pages}</span>
+        <span>{t('reader.of').replace('{pages}', String(pages))}</span>
       </label>
-      <a class="download" href={src} download>הורדה</a>
+      <a class="download" href={src} download>{t('reader.download')}</a>
     </header>
 
-    <nav class="toc" id={`${id}-toc`} aria-label="פרקים">
+    <nav class="toc" id={`${id}-toc`} aria-label={t('reader.chapters')}>
       <p class="toc-title">{title}</p>
       <ol>
         {
-          outline.map((chapter, i) => (
+          chapters.map((chapter, i) => (
             <li>
               <a
                 href={`#page=${chapter.page}`}
@@ -76,7 +94,7 @@ const { id, src, title, storageKey, pages, aspect, outline } = Astro.props;
       </ol>
     </nav>
 
-    <div class="desk" tabindex="0" aria-label="עמודי הקובץ" data-desk style={`--aspect: ${aspect}`}>
+    <div class="desk" tabindex="0" aria-label={t('reader.pages')} data-desk style={`--aspect: ${aspect}`}>
       <p class="status" role="status" data-status></p>
     </div>
   </div>
@@ -312,6 +330,16 @@ const { id, src, title, storageKey, pages, aspect, outline } = Astro.props;
     width: 100%;
     height: 100%;
     border-radius: 2px;
+  }
+
+  /* Documents without bookmarks (posters, slides) get the whole width. */
+  .shell.no-toc {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .no-toc .toc,
+  .no-toc .toc-toggle {
+    display: none !important;
   }
 
   @media (max-width: 52rem) {

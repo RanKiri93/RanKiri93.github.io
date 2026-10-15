@@ -1,75 +1,413 @@
 ---
-import { getCollection } from 'astro:content';
+import 'katex/dist/katex.min.css';
+import { getCollection, getEntry, render, type CollectionEntry } from 'astro:content';
+import Butterfly from './Butterfly.astro';
+import PdfReader from './PdfReader.astro';
 import { formatPartialDate } from '../i18n/format';
 import { getLangFromUrl, useTranslations, type UIKey } from '../i18n/ui';
+import { getPdfInfo, type PdfInfo } from '../lib/pdfInfo';
+import { inlineTex } from '../lib/tex';
 
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
 
-const papers = (await getCollection('publications')).sort((a, b) => b.data.year - a.data.year);
-const talks = (await getCollection('talks')).sort((a, b) => b.data.date.localeCompare(a.data.date));
+const page = await getEntry('pages', `${lang}/research`);
+if (!page) throw new Error(`Missing src/content/pages/${lang}/research.md`);
+const { Content: Themes } = await render(page);
 
-const talkSections: { kind: 'conference' | 'invited' | 'poster'; heading: UIKey }[] = [
-  { kind: 'conference', heading: 'research.conferences' },
-  { kind: 'invited', heading: 'research.invited' },
-  { kind: 'poster', heading: 'research.posters' },
-];
+/** PDFs on this page that open in the reader (thesis, poster, slides). */
+const documents: { id: string; src: string; title: string; info: PdfInfo }[] = [];
+async function readerFor(src: string, title: string) {
+  const id = `reader-${src.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}`;
+  if (!documents.some((d) => d.id === id)) documents.push({ id, src, title, info: await getPdfInfo(src) });
+  return id;
+}
+
+function bibtex({ id, data }: CollectionEntry<'publications'>): string {
+  const authors = data.authors
+    .map((name) => {
+      const parts = name.split(' ');
+      return `${parts.at(-1)}, ${parts.slice(0, -1).join(' ')}`;
+    })
+    .join(' and ');
+  const key = `${data.authors[0].split(' ').at(-1)}${data.year}${data.kind === 'thesis' ? 'thesis' : ''}`;
+  const fields: [string, string | number | undefined][] =
+    data.kind === 'article'
+      ? [
+          ['author', authors],
+          ['title', `{${data.titleTex ?? data.title}}`],
+          ['journal', data.journal],
+          ['volume', data.volume],
+          ['pages', data.article && `Paper No. ${data.article}`],
+          ['year', data.year],
+          ['doi', data.doi],
+          ['eprint', data.arxiv],
+          ['archivePrefix', data.arxiv && 'arXiv'],
+        ]
+      : [
+          ['author', authors],
+          ['title', `{${data.titleTex ?? data.title}}`],
+          ['school', data.institution],
+          ['year', data.year],
+        ];
+  const body = fields
+    .filter(([, value]) => value !== undefined && value !== '')
+    .map(([name, value]) => `  ${name} = {${value}}`)
+    .join(',\n');
+  return `@${data.kind === 'article' ? 'article' : 'mastersthesis'}{${key || id},\n${body}\n}`;
+}
+
+const papers = await Promise.all(
+  (await getCollection('publications'))
+    .sort((a, b) => b.data.year - a.data.year)
+    .map(async (entry) => ({
+      entry,
+      Abstract: entry.body?.trim() ? (await render(entry)).Content : null,
+      bibtex: bibtex(entry),
+      readerId: entry.data.file ? await readerFor(entry.data.file, entry.data.title) : null,
+    })),
+);
+
+const talks = await Promise.all(
+  (await getCollection('talks'))
+    .sort((a, b) => b.data.date.localeCompare(a.data.date))
+    .map(async ({ data }) => ({
+      ...data,
+      fileReader: data.file ? await readerFor(data.file, data.title) : null,
+      slidesReader: data.slides ? await readerFor(data.slides, data.title) : null,
+    })),
+);
+
+const kindLabel: Record<string, UIKey> = {
+  conference: 'talk.conference',
+  invited: 'talk.invited',
+  poster: 'talk.poster',
+};
 ---
 
-<div class="container page">
-  <h1>{t('research.title')}</h1>
-  <p class="lede">{t('research.intro')}</p>
+<div class="container page research">
+  <h1>{page.data.title}</h1>
+  {page.data.lede && <p class="lede" set:html={inlineTex(page.data.lede)} />}
 
-  <section>
-    <h2>{t('research.publications')}</h2>
-    <ul class="entries">
-      {
-        papers.map(({ data }) => (
-          <li>
-            <a href={data.url}>
+  <Butterfly />
+
+  <section class="themes" aria-labelledby="themes-heading">
+    <h2 id="themes-heading">{t('research.themes')}</h2>
+    <div class="themes-grid">
+      <Themes />
+    </div>
+  </section>
+
+  <section aria-labelledby="papers-heading">
+    <h2 id="papers-heading">{t('research.papers')}</h2>
+    {
+      papers.map(({ entry: { data }, Abstract, bibtex, readerId }) => (
+        <article class="paper">
+          <h3>
+            {data.url ? (
+              <a href={data.url}>
+                <bdi lang="en">{data.title}</bdi>
+              </a>
+            ) : (
               <bdi lang="en">{data.title}</bdi>
-            </a>
-            <span class="meta">
+            )}
+          </h3>
+          <p class="meta">
+            {data.kind === 'article' ? (
               <bdi lang="en">
                 {data.authors.join(', ')}. <i>{data.journal}</i>
                 {data.volume && ` ${data.volume}`}
                 {data.article && `, article ${data.article}`} ({data.year})
               </bdi>
-            </span>
+            ) : (
+              t('research.thesisMeta').replace('{year}', String(data.year))
+            )}
+          </p>
+
+          {Abstract && (
+            <div class="abstract" lang="en" dir="ltr">
+              <Abstract />
+            </div>
+          )}
+
+          <p class="links">
+            {data.url && <a href={data.url}>{t('research.read')} (Springer)</a>}
+            {data.arxiv && <a href={`https://arxiv.org/abs/${data.arxiv}`}>arXiv:{data.arxiv}</a>}
+            {data.doi && (
+              <a href={`https://doi.org/${data.doi}`}>
+                <bdi>DOI {data.doi}</bdi>
+              </a>
+            )}
+            {readerId && data.file && (
+              <a href={data.file} data-reader-open={readerId} data-page="1">
+                {t('research.openPdf')}
+              </a>
+            )}
+            <button type="button" class="copy" data-copy={bibtex} data-copied={t('research.copied')}>
+              {t('research.bibtex')}
+            </button>
+          </p>
+
+          {data.related.length > 0 && (
+            <p class="related">
+              {t('research.related')}{' '}
+              {data.related.map((work) => (
+                <a href={work.url}>
+                  <bdi lang="en">
+                    {work.authors}, <i>{work.title}</i> ({work.year})
+                  </bdi>
+                </a>
+              ))}
+            </p>
+          )}
+        </article>
+      ))
+    }
+  </section>
+
+  <section aria-labelledby="talks-heading">
+    <h2 id="talks-heading">{t('research.talks')}</h2>
+    <ol class="timeline">
+      {
+        talks.map((talk) => (
+          <li>
+            <p class="when">
+              <time datetime={talk.date}>{formatPartialDate(talk.date, lang)}</time>
+              <span class="kind">{t(kindLabel[talk.kind])}</span>
+            </p>
+            <p class="talk-title">
+              <bdi lang="en">{talk.title}</bdi>
+            </p>
+            <p class="meta">
+              {talk.event && (talk.eventUrl ? <a href={talk.eventUrl}>{talk.event[lang]}</a> : talk.event[lang])}
+              {talk.event && ', '}
+              {talk.place[lang]}
+            </p>
+            {talk.slidesReader && talk.slides && (
+              <p class="links">
+                <a href={talk.slides} data-reader-open={talk.slidesReader} data-page="1">
+                  {t('research.slides')}
+                </a>
+              </p>
+            )}
+            {talk.fileReader && talk.file && (
+              <a class="poster" href={talk.file} data-reader-open={talk.fileReader} data-page="1">
+                {talk.thumbnail ? (
+                  <img src={talk.thumbnail} alt="" width="720" height="504" loading="lazy" decoding="async" />
+                ) : null}
+                <span>{t('research.viewPoster')}</span>
+              </a>
+            )}
           </li>
         ))
       }
-    </ul>
+    </ol>
   </section>
-
-  {
-    talkSections.map(({ kind, heading }) => (
-      <section>
-        <h2>{t(heading)}</h2>
-        <ul class="entries">
-          {talks
-            .filter(({ data }) => data.kind === kind)
-            .map(({ data }) => (
-              <li>
-                {data.file ? (
-                  <a href={data.file}>
-                    <bdi lang="en">{data.title}</bdi>
-                  </a>
-                ) : (
-                  <span class="title">
-                    <bdi lang="en">{data.title}</bdi>
-                  </span>
-                )}
-                <span class="meta">
-                  {data.event &&
-                    (data.eventUrl ? <a href={data.eventUrl}>{data.event[lang]}</a> : data.event[lang])}
-                  {data.event && ', '}
-                  {data.place[lang]}, {formatPartialDate(data.date, lang)}
-                </span>
-              </li>
-            ))}
-        </ul>
-      </section>
-    ))
-  }
 </div>
+
+{
+  documents.map((doc) => (
+    <PdfReader
+      id={doc.id}
+      src={doc.src}
+      title={doc.title}
+      storageKey={doc.id}
+      pages={doc.info.pages}
+      aspect={doc.info.aspect}
+      outline={doc.info.outline}
+    />
+  ))
+}
+
+<script>
+  for (const button of document.querySelectorAll<HTMLButtonElement>('button[data-copy]')) {
+    const label = button.textContent;
+    button.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(button.dataset.copy!);
+        button.textContent = button.dataset.copied!;
+        setTimeout(() => (button.textContent = label), 2000);
+      } catch {
+        // Clipboard blocked: show the entry so it can be copied by hand.
+        const pre = document.createElement('pre');
+        pre.textContent = button.dataset.copy!;
+        pre.dir = 'ltr';
+        button.closest('.paper')?.append(pre);
+      }
+    });
+  }
+</script>
+
+<style>
+  .research :global(.butterfly),
+  .themes,
+  .themes-grid {
+    max-width: none;
+  }
+
+  .themes-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: auto 1fr;
+    grid-auto-flow: column;
+    gap: 0 var(--space-5);
+  }
+
+  .themes-grid :global(h3) {
+    margin: 0 0 var(--space-2);
+    font-size: var(--step-1);
+  }
+
+  .themes-grid :global(p) {
+    margin: 0;
+  }
+
+  .paper {
+    padding-block: var(--space-3) var(--space-4);
+    border-block-start: 1px solid var(--color-rule);
+  }
+
+  .paper h3 {
+    margin: 0 0 var(--space-1);
+    font-size: var(--step-1);
+  }
+
+  .paper h3 a {
+    color: var(--color-text);
+    text-decoration: none;
+  }
+
+  .paper h3 a:hover {
+    color: var(--color-primary);
+    text-decoration: underline;
+  }
+
+  .abstract {
+    margin-block: var(--space-3);
+    padding-inline-start: var(--space-3);
+    border-inline-start: 3px solid var(--color-rule);
+    color: var(--color-text-muted);
+    text-align: left;
+  }
+
+  .abstract :global(p) {
+    margin: 0;
+  }
+
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-4);
+    margin: var(--space-2) 0;
+  }
+
+  .copy {
+    padding: var(--space-1) var(--space-3);
+    border: 1px solid var(--color-rule);
+    border-radius: var(--radius);
+    background: var(--color-surface);
+    color: var(--color-text);
+    font: inherit;
+    font-size: var(--step--1);
+    cursor: pointer;
+  }
+
+  .copy:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  .related {
+    margin: var(--space-2) 0 0;
+    color: var(--color-text-muted);
+    font-size: var(--step--1);
+  }
+
+  .paper :global(pre) {
+    overflow-x: auto;
+    padding: var(--space-3);
+    background: var(--color-surface);
+    border-radius: var(--radius);
+    font-size: var(--step--1);
+  }
+
+  .timeline {
+    position: relative;
+    margin: 0;
+    padding: 0;
+    padding-inline-start: var(--space-4);
+    list-style: none;
+  }
+
+  /* The time axis: talks really are a sequence. */
+  .timeline::before {
+    content: '';
+    position: absolute;
+    inset-block: var(--space-2);
+    inset-inline-start: 4px;
+    width: 1px;
+    background: var(--color-rule);
+  }
+
+  .timeline li {
+    position: relative;
+    padding-block-end: var(--space-4);
+  }
+
+  .timeline li::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: calc(-1 * var(--space-4));
+    inset-block-start: 0.45em;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--color-primary);
+  }
+
+  .timeline p {
+    margin: 0;
+  }
+
+  .when {
+    display: flex;
+    gap: var(--space-3);
+    color: var(--color-text-muted);
+    font-size: var(--step--1);
+  }
+
+  .kind {
+    color: var(--color-primary);
+  }
+
+  .talk-title {
+    font-weight: 600;
+  }
+
+  .poster {
+    display: inline-grid;
+    gap: var(--space-1);
+    margin-block-start: var(--space-2);
+    width: min(100%, 22rem);
+  }
+
+  .poster img {
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--color-rule);
+    border-radius: 2px;
+  }
+
+  @media (max-width: 48rem) {
+    .themes-grid {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: none;
+      grid-auto-flow: row;
+    }
+
+    .themes-grid :global(p) {
+      margin-block-end: var(--space-4);
+    }
+  }
+</style>

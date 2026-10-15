@@ -30,6 +30,13 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script is:inline>
+      // Apply a saved light/dark choice before the first paint (no flash).
+      try {
+        const theme = localStorage.getItem('theme');
+        if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
+      } catch {}
+    </script>
     <title>{pageTitle}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />

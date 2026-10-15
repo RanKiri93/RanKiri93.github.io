@@ -1,0 +1,417 @@
+---
+import { Image } from 'astro:assets';
+import { getCollection } from 'astro:content';
+import photo from '../assets/profile.png';
+import CourseGlyph from './CourseGlyph.astro';
+import NumericalRange from './NumericalRange.astro';
+import { coursesWithGlyph, materialLabel } from '../data/courses';
+import { getLangFromUrl, localePath, useTranslations } from '../i18n/ui';
+import { getPdfInfo } from '../lib/pdfInfo';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const materialLabelEn = { lectures: 'Lectures', recitations: 'Recitations' } as const;
+
+// Courses I lectured first, then the ones I taught recitations in.
+const courses = await Promise.all(
+  (await getCollection('courses'))
+    .sort((a, b) => a.data.role.localeCompare(b.data.role) || a.data.code.localeCompare(b.data.code))
+    .map(async ({ id, data }) => ({
+      id,
+      title: lang === 'he' ? data.title : data.titleEn,
+      code: data.code,
+      kinds: data.materials.map((m) => (lang === 'he' ? materialLabel : materialLabelEn)[m.kind]).join(', '),
+      pages: (await getPdfInfo(data.materials[0].file)).pages,
+    })),
+);
+
+const [paper] = (await getCollection('publications'))
+  .filter(({ data }) => data.kind === 'article')
+  .sort((a, b) => b.data.year - a.data.year);
+
+const coursesHref = localePath('he', 'courses/');
+const hreflang = lang === 'he' ? undefined : 'he';
+---
+
+<div class="home">
+  <section class="hero container">
+    <div class="hero-text">
+      <p class="eyebrow">{t('home.eyebrow')}</p>
+      <h1>{t('site.name')}</h1>
+      <p class="lede">{t('home.lede')}</p>
+      <p class="actions">
+        <a class="button primary" href={coursesHref} hreflang={hreflang}>{t('home.toCourses')}</a>
+        <a class="button" href={localePath(lang, 'research/')}>{t('home.toResearch')}</a>
+      </p>
+    </div>
+    <div class="hero-figure">
+      <NumericalRange />
+    </div>
+  </section>
+
+  <section class="band courses-band" aria-labelledby="courses-heading">
+    <div class="container">
+      <header class="section-head">
+        <div>
+          <h2 id="courses-heading">{t('home.coursesTitle')}</h2>
+          <p class="meta">
+            {t('home.coursesIntro')}
+            {t('home.coursesNote') && ` ${t('home.coursesNote')}`}
+          </p>
+        </div>
+        <a class="more" href={coursesHref} hreflang={hreflang}>{t('home.allCourses')}</a>
+      </header>
+      <ul class="cards">
+        {
+          courses.map(({ id, title, code, kinds, pages }, i) => (
+            <li style={`--i: ${i}`}>
+              <a class="card" href={`/courses/${id}/`} hreflang={hreflang}>
+                {coursesWithGlyph.has(id) && (
+                  <span class="card-glyph" aria-hidden="true">
+                    <CourseGlyph code={id} variant="thumb" />
+                  </span>
+                )}
+                <span class="card-title" style={lang === 'he' ? `view-transition-name: title-${id}` : undefined}>
+                  {title}
+                </span>
+                <span class="meta">
+                  {code} · {kinds} · {t('home.pages').replace('{n}', String(pages))}
+                </span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <section class="container split">
+    <div class="research" aria-labelledby="research-heading">
+      <h2 id="research-heading">{t('home.researchTitle')}</h2>
+      <p>{t('home.researchText')}</p>
+      {
+        paper && (
+          <a class="paper" href={localePath(lang, 'research/')}>
+            <span class="paper-title" dir="ltr">
+              {paper.data.title}
+            </span>
+            <span class="meta" dir="ltr">
+              {paper.data.journal} ({paper.data.year})
+            </span>
+          </a>
+        )
+      }
+      <a class="more" href={localePath(lang, 'research/')}>{t('home.toResearchPage')}</a>
+    </div>
+
+    <div class="about" aria-labelledby="about-heading">
+      <Image class="portrait" src={photo} alt="" widths={[160, 320]} sizes="8rem" />
+      <div>
+        <h2 id="about-heading">{t('home.aboutTitle')}</h2>
+        <p>{t('home.aboutText')}</p>
+        <a class="more" href={localePath(lang, 'about/')}>{t('home.toAbout')}</a>
+      </div>
+    </div>
+  </section>
+</div>
+
+<style>
+  .home {
+    padding-block-end: var(--space-6);
+  }
+
+  /* Hero */
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    gap: var(--space-5);
+    align-items: center;
+    padding-block: var(--space-6) var(--space-5);
+  }
+
+  .hero-text > * {
+    animation: rise 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+
+  .hero-text > :nth-child(2) {
+    animation-delay: 80ms;
+  }
+
+  .hero-text > :nth-child(3) {
+    animation-delay: 160ms;
+  }
+
+  .hero-text > :nth-child(4) {
+    animation-delay: 240ms;
+  }
+
+  .eyebrow {
+    margin: 0 0 var(--space-2);
+    color: var(--color-primary);
+    font-size: var(--step--1);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+
+  h1 {
+    margin: 0 0 var(--space-3);
+    font-size: clamp(var(--step-4), 7vw, 4.25rem);
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+  }
+
+  .lede {
+    max-width: 36rem;
+    margin: 0;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: var(--space-4) 0 0;
+  }
+
+  .hero-figure {
+    max-width: 30rem;
+    justify-self: center;
+    width: 100%;
+  }
+
+  /* Courses */
+  .band {
+    padding-block: var(--space-5);
+    border-block: 1px solid var(--color-rule);
+    background: color-mix(in srgb, var(--color-surface) 55%, var(--color-bg));
+  }
+
+  .section-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    justify-content: space-between;
+    gap: var(--space-2) var(--space-4);
+    margin-block-end: var(--space-4);
+  }
+
+  .section-head h2 {
+    margin: 0 0 var(--space-1);
+  }
+
+  .section-head .meta {
+    margin: 0;
+    font-size: var(--step-0);
+  }
+
+  h2 {
+    font-size: var(--step-2);
+  }
+
+  .more {
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .more::after {
+    content: ' ←';
+  }
+
+  :global([dir='ltr']) .more::after {
+    content: ' →';
+  }
+
+  .more:hover {
+    text-decoration: underline;
+  }
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .cards li {
+    display: flex;
+    animation: rise 600ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    animation-delay: calc(300ms + var(--i) * 60ms);
+  }
+
+  .card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    width: 100%;
+    padding: var(--space-3);
+    border: 1px solid var(--color-rule);
+    border-radius: calc(var(--radius) * 1.5);
+    background: var(--color-surface);
+    color: inherit;
+    text-decoration: none;
+    transition:
+      border-color 160ms ease,
+      translate 160ms ease,
+      box-shadow 160ms ease;
+  }
+
+  .card:hover {
+    border-color: color-mix(in srgb, var(--color-primary) 55%, var(--color-rule));
+    translate: 0 -2px;
+    box-shadow: 0 6px 18px -10px color-mix(in srgb, var(--color-primary) 45%, transparent);
+  }
+
+  .card-glyph {
+    display: block;
+    margin-block-end: var(--space-2);
+    padding: var(--space-2);
+    border-radius: var(--radius);
+    background: var(--color-bg);
+  }
+
+  .card-title {
+    width: fit-content;
+    font-weight: 600;
+    line-height: 1.35;
+  }
+
+  .card:hover .card-title {
+    color: var(--color-primary);
+  }
+
+  .card .meta {
+    margin-block-start: auto;
+    padding-block-start: var(--space-1);
+  }
+
+  /* Research and about */
+  .split {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    gap: var(--space-5);
+    padding-block-start: var(--space-5);
+  }
+
+  .split h2 {
+    margin: 0 0 var(--space-2);
+  }
+
+  .split p {
+    margin: 0 0 var(--space-3);
+  }
+
+  .paper {
+    display: grid;
+    gap: var(--space-1);
+    margin-block-end: var(--space-3);
+    padding: var(--space-3);
+    border-inline-start: 3px solid var(--color-primary);
+    background: var(--color-surface);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    color: inherit;
+    text-decoration: none;
+    text-align: start;
+  }
+
+  :global([dir='rtl']) .paper {
+    border-radius: var(--radius) 0 0 var(--radius);
+  }
+
+  .paper-title {
+    font-weight: 600;
+    text-align: left;
+  }
+
+  .paper .meta {
+    text-align: left;
+  }
+
+  .paper:hover .paper-title {
+    color: var(--color-primary);
+  }
+
+  .about {
+    display: grid;
+    grid-template-columns: 7rem minmax(0, 1fr);
+    gap: var(--space-4);
+    align-items: start;
+  }
+
+  .portrait {
+    width: 7rem;
+    height: 7rem;
+    object-fit: cover;
+    object-position: 50% 20%;
+    border-radius: 50%;
+  }
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      translate: 0 0.6rem;
+    }
+  }
+
+  @media (max-width: 56rem) {
+    .hero {
+      grid-template-columns: minmax(0, 1fr);
+      padding-block-start: var(--space-5);
+    }
+
+    .hero-figure {
+      max-width: 22rem;
+    }
+
+    .split {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  /* Phones: compact rows, picture beside the name, so all courses fit in a scroll or two. */
+  @media (max-width: 36rem) {
+    .cards {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-2);
+    }
+
+    .card {
+      display: grid;
+      grid-template-columns: 6.5rem minmax(0, 1fr);
+      grid-template-rows: auto auto;
+      column-gap: var(--space-3);
+      align-items: center;
+      padding: var(--space-2);
+    }
+
+    .card-glyph {
+      grid-row: span 2;
+      margin: 0;
+      padding: var(--space-1);
+    }
+
+    .card-title {
+      align-self: end;
+    }
+
+    .card .meta {
+      align-self: start;
+      margin: 0;
+      padding: 0;
+    }
+  }
+
+  @media (max-width: 30rem) {
+    .about {
+      grid-template-columns: 5rem minmax(0, 1fr);
+      gap: var(--space-3);
+    }
+
+    .portrait {
+      width: 5rem;
+      height: 5rem;
+    }
+  }
+</style>
