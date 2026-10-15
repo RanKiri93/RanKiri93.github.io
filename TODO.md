@@ -48,7 +48,5 @@ Tick them off here as they're done.
 - [x] Commit everything on `astro-rework`.
 - [x] Remove the old Hugo files (`content/`, `layouts/`, `themes/` + the
       `.gitmodules` entry, `static/`, `archetypes/`, `i18n/`, `hugo.toml`).
-- [ ] **Push** `astro-rework` (Actions should show a green build, deploy
-      skipped), then push `main`, which is already merged locally and is what
-      deploys.
-- [ ] After the merge: check the Actions run, then the live site.
+- [x] Pushed and merged; live on https://rankiri93.github.io since 2026-10-15
+      (Actions green, reader and CV checked on the live site).
