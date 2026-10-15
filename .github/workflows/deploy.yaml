@@ -10,6 +10,10 @@ on:
       - astro-rework
   workflow_dispatch:
 
+# Publishing pushes a commit to the gh-pages branch.
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
