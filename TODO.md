@@ -19,8 +19,16 @@ Tick them off here as they're done.
 
 ## Content to send
 
-- [ ] **MSc thesis PDF** → put in `public/research/`; it gets a "read" link on the
-      Research page (`file:` in `src/content/publications/msc-thesis.md`).
+- [x] MSc thesis PDF → `public/research/msc-thesis.pdf` (Research page and CV).
+- [x] PhD start: November 2022.
+- [x] Grader: three semesters from Spring 2018, overlapping the first year as TA.
+- [x] Profile links: Google Scholar and ORCID (About page and CV).
+- [ ] Review the wording of "How I teach" (lightly edited from your text,
+      gender-neutral in Hebrew, plus an English version): `teachingApproach`
+      in `src/data/profile.ts`.
+- [ ] **Outstanding Lecturer for תשפ"ו?** Neither promoteach nor the Math
+      faculty news (math.technion.ac.il, which also lists commendations) has
+      תשפ"ו results yet; check again later.
 - [x] Talk slides for IWOTA 2025, IWOTA 2023 and "What is a UCP Map?" 2021 →
       `public/research/*-slides.pdf`, linked from the Research page and the CV.
 - [x] Copenhagen 2022 removed from the talks (attended only; the CV lists it
